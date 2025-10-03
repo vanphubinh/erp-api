@@ -1,0 +1,17 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio.workspace = true
+axum.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+async-trait.workspace = true
+utoipa.workspace = true
+tracing.workspace = true
