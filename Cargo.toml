@@ -1,12 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["apps/http-api", "shared"]
+members = ["apps/*", "crates/*"]
 
 [workspace.dependencies]
-async-trait = "0.1.89"
+# --- Async & Runtime ---
 tokio = { version = "1.47.1", features = ["full"] }
 
-# --- Async & Runtime ---
 # --- Web Framework & HTTP ---
 axum = { version = "0.8.4", features = ["macros"] }
 tower-http = { version = "0.6.6", features = ["trace", "cors"] }
@@ -23,9 +22,11 @@ serde_json = "1.0.145"
 uuid = "1.18.1"
 chrono = "0.4.42"
 chrono-tz = "0.10.4"
+async-trait = "0.1.89"
+
 
 #Database
-sea-orm = { version = "2.0.0-rc.7", features = [
+sea-orm = { version = "2.0.0-rc.18", features = [
   "sqlx-postgres",
   "runtime-tokio-native-tls",
   "macros",
