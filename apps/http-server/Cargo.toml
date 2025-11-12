@@ -11,3 +11,4 @@ tower-http = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
+sea-orm = { workspace = true }

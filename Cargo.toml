@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["apps/*", "crates/*"]
+members = ["apps/*", "crates/*", "migration"]
 
 [workspace.dependencies]
 # --- Async & Runtime ---
@@ -17,12 +17,13 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # --- Utilities ---
 dotenvy = "0.15"
 thiserror = "2.0.17"
-serde = "1.0.228"
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-uuid = "1.18.1"
-chrono = "0.4.42"
+uuid = { version = "1.18.1", features = ["v4", "serde"] }
+chrono = { version = "0.4.42", features = ["serde"] }
 chrono-tz = "0.10.4"
 async-trait = "0.1.89"
+rust_decimal = { version = "1.36", features = ["serde"] }
 
 
 #Database

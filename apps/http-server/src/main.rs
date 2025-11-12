@@ -1,5 +1,9 @@
+use std::sync::Arc;
+
 use axum::Router;
+use http_api::app_state;
 use http_api::config;
+use sea_orm::Database;
 use tower_http::{
     cors::CorsLayer,
     trace::{self, TraceLayer},
@@ -14,6 +18,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_tracing();
 
     info!("Starting VPB ERP Backend...");
+
+    let conn = Database::connect(config.db_url)
+        .await
+        .expect("Database connection failed");
+
+    let app_state = Arc::new(app_state::AppState { connection: conn });
 
     let app = Router::new().with_state(CorsLayer::permissive()).layer(
         TraceLayer::new_for_http()

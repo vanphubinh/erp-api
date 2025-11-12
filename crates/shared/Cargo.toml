@@ -2,6 +2,7 @@
 name = "shared"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.88.0"
 
 [dependencies]
 tokio.workspace = true
@@ -12,6 +13,8 @@ serde_json.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 chrono.workspace = true
+chrono-tz.workspace = true
 async-trait.workspace = true
 utoipa.workspace = true
 tracing.workspace = true
+rust_decimal.workspace = true

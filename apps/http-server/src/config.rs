@@ -4,6 +4,7 @@ use std::net::SocketAddr;
 #[derive(Debug, Clone)]
 pub struct Config {
     pub addr: SocketAddr,
+    pub db_url: String,
 }
 
 impl Config {
@@ -20,6 +21,8 @@ impl Config {
             .parse::<SocketAddr>()
             .unwrap_or_else(|_| "127.0.0.1:3000".parse().unwrap());
 
-        Ok(Config { addr })
+        let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+        Ok(Config { addr, db_url })
     }
 }
