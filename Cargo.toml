@@ -35,5 +35,14 @@ sea-orm = { version = "2.0.0-rc.18", features = [
   "with-uuid",
 ] }
 
-# --- OpenAPI ---
-utoipa = { version = "5.4.0" }
+utoipa = { version = "5.4.0", features = [
+  "macros",
+  "axum_extras",
+  "debug",
+  "chrono",
+  "uuid",
+  "decimal",
+] }
+utoipa-axum = "0.2"
+utoipa-scalar = { version = "0.3", features = ["axum"] }
+utoipauto = { version = "0.2.0" }

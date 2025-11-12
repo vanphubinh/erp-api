@@ -1,5 +1,5 @@
 [package]
-name = "http-api"
+name = "http-server"
 version = "0.1.0"
 edition = "2024"
 
@@ -12,3 +12,8 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
 sea-orm = { workspace = true }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+utoipa-scalar = { workspace = true }
+utoipauto = { workspace = true }
+serde_json = { workspace = true }

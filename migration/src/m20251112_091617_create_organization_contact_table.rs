@@ -80,7 +80,10 @@ impl MigrationTrait for Migration {
                     .foreign_key(
                         ForeignKey::create()
                             .name("fk_org_contact_organization")
-                            .from(OrganizationContact::Table, OrganizationContact::OrganizationId)
+                            .from(
+                                OrganizationContact::Table,
+                                OrganizationContact::OrganizationId,
+                            )
                             .to(Organization::Table, Organization::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .on_update(ForeignKeyAction::Cascade),
@@ -197,4 +200,3 @@ enum Contact {
     Table,
     Id,
 }
-
