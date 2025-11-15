@@ -10,16 +10,16 @@ use crate::pagination::PaginationMeta;
 
 /// Success response structure
 #[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct SuccessResponse<T> {
     pub data: T,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<Meta>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub links: Option<HashMap<String, String>>,
 }
 
 /// Error response following RFC 7807 (Problem Details)
 #[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ErrorResponse {
     /// URI reference that identifies the problem type
     #[serde(rename = "type")]
@@ -48,6 +48,7 @@ pub struct ErrorResponse {
 }
 
 #[derive(Debug, Clone, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct FieldError {
     #[schema(example = "email")]
     pub field: String,
@@ -57,6 +58,7 @@ pub struct FieldError {
 
 /// Meta information (can include pagination, timestamps, etc.)
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct Meta {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pagination: Option<PaginationMeta>,
@@ -71,11 +73,7 @@ pub struct Meta {
 
 impl<T: Serialize> SuccessResponse<T> {
     pub fn new(data: T) -> Self {
-        Self {
-            data,
-            meta: None,
-            links: None,
-        }
+        Self { data, meta: None }
     }
 
     pub fn with_meta(mut self, meta: Meta) -> Self {
@@ -90,11 +88,6 @@ impl<T: Serialize> SuccessResponse<T> {
             extra: HashMap::new(),
         });
         meta.pagination = Some(pagination);
-        self
-    }
-
-    pub fn with_links(mut self, links: HashMap<String, String>) -> Self {
-        self.links = Some(links);
         self
     }
 }

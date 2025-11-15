@@ -2,8 +2,7 @@ use std::env;
 use std::fs;
 use std::sync::Arc;
 
-use http_server::app_state;
-use http_server::config;
+use http_server::{app_state, config, routes};
 use sea_orm::Database;
 use tower_http::trace;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
@@ -37,7 +36,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app_state = Arc::new(app_state::AppState { connection: conn });
 
+    // Create API routes
+    let api_router = routes::api_routes();
+
     let (app, openapi_doc) = OpenApiRouter::with_openapi(openapi.clone())
+        .merge(api_router)
         .with_state(app_state)
         .split_for_parts();
 

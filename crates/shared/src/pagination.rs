@@ -1,17 +1,18 @@
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 /// Query parameters for pagination
-#[derive(Debug, Clone, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Deserialize, IntoParams)]
+#[serde(rename_all = "camelCase")]
 pub struct PageParams {
     /// Current page number (1-based)
     #[serde(default = "default_page")]
-    #[schema(example = 1, minimum = 1)]
+    #[param(example = 1, minimum = 1)]
     pub page: u64,
 
     /// Number of items per page
     #[serde(default = "default_page_size")]
-    #[schema(example = 20, minimum = 1, maximum = 100)]
+    #[param(example = 20, minimum = 1, maximum = 100)]
     pub page_size: u64,
 }
 
@@ -60,6 +61,7 @@ impl Default for PageParams {
 
 /// Pagination metadata for responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct PaginationMeta {
     /// Current page number (1-based)
     #[schema(example = 1)]
