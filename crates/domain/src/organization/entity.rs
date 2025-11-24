@@ -1,25 +1,59 @@
 use super::value_objects::{Email, OrganizationName, Phone, Url};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 /// Organization aggregate root - pure domain model
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, ToSchema, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Organization {
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
     id: Uuid,
+
+    #[schema(example = "Acme Corporation")]
     name: OrganizationName,
+
+    #[schema(example = "contact@acme.com")]
     email: Option<Email>,
+
+    #[schema(example = "+1-555-0100")]
     phone: Option<Phone>,
+
+    #[schema(example = "https://acme.com")]
     website: Option<Url>,
+
+    #[schema(example = "Technology")]
     industry: Option<String>,
+
+    #[schema(example = "123 Main Street")]
     address: Option<String>,
+
+    #[schema(example = "San Francisco")]
     city: Option<String>,
+
+    #[schema(example = "CA")]
     state: Option<String>,
+
+    #[schema(example = "94105")]
     postal_code: Option<String>,
+
+    #[schema(example = "US")]
     country_code: Option<String>,
+
+    #[schema(example = "America/Los_Angeles")]
     timezone: Option<String>,
+
+    #[schema(example = "USD")]
     currency: Option<String>,
+
+    #[schema(example = true)]
     is_active: bool,
+
+    #[schema(example = "2025-01-15T10:30:00Z")]
     created_at: DateTime<Utc>,
+
+    #[schema(example = "2025-01-15T15:45:00Z")]
     updated_at: DateTime<Utc>,
 }
 

@@ -66,9 +66,6 @@ pub struct Meta {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[schema(example = "2025-10-02T10:30:00Z")]
     pub timestamp: Option<String>,
-
-    #[serde(flatten)]
-    pub extra: HashMap<String, serde_json::Value>,
 }
 
 impl<T: Serialize> SuccessResponse<T> {
@@ -85,7 +82,6 @@ impl<T: Serialize> SuccessResponse<T> {
         let meta = self.meta.get_or_insert_with(|| Meta {
             pagination: None,
             timestamp: None,
-            extra: HashMap::new(),
         });
         meta.pagination = Some(pagination);
         self

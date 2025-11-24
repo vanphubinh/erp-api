@@ -545,7 +545,9 @@ dependencies = [
  "chrono",
  "derive_more",
  "serde",
+ "serde_json",
  "shared",
+ "utoipa",
  "uuid",
 ]
 

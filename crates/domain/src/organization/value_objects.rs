@@ -1,9 +1,11 @@
 use derive_more::{AsRef, Deref, Display};
 use serde::{Deserialize, Serialize};
 use shared::DomainError;
+use utoipa::ToSchema;
 
 /// Organization name with validation
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref, ToSchema)]
+#[schema(value_type = String, example = "Acme Corporation")]
 pub struct OrganizationName(String);
 
 impl OrganizationName {
@@ -27,8 +29,9 @@ impl OrganizationName {
     }
 }
 
-// Add more value objects with validation
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref)]
+/// Email address with validation
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref, ToSchema)]
+#[schema(value_type = String, example = "contact@acme.com")]
 pub struct Email(String);
 
 impl Email {
@@ -41,7 +44,9 @@ impl Email {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref)]
+/// Phone number with validation
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref, ToSchema)]
+#[schema(value_type = String, example = "+1-555-0100")]
 pub struct Phone(String);
 
 impl Phone {
@@ -56,7 +61,9 @@ impl Phone {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref)]
+/// URL with validation
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Display, AsRef, Deref, ToSchema)]
+#[schema(value_type = String, example = "https://acme.com")]
 pub struct Url(String);
 
 impl Url {
