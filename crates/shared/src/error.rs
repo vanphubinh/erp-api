@@ -25,7 +25,7 @@ pub enum AppError {
     Domain(#[from] DomainError),
 
     #[error("Database error: {0}")]
-    Database(#[from] sea_orm::DbErr),
+    Database(#[from] sqlx::Error),
 
     #[error("Not found: {0}")]
     NotFound(String),

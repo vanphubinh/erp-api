@@ -10,4 +10,4 @@ shared = { path = "../shared" }
 uuid = { workspace = true }
 chrono = { workspace = true }
 async-trait = { workspace = true }
-sea-orm = { workspace = true }
+sqlx = { workspace = true }

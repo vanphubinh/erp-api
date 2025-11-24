@@ -1,8 +1,8 @@
 pub mod organization;
 
 use crate::app_state::AppState;
-use utoipa_axum::router::OpenApiRouter;
 use std::sync::Arc;
+use utoipa_axum::router::OpenApiRouter;
 
 /// Create all API routes with OpenAPI documentation
 /// Hybrid REST verbs + RPC-style action paths
@@ -13,4 +13,3 @@ pub fn api_routes() -> OpenApiRouter<Arc<AppState>> {
     // .nest("/api/invoices", invoice::routes())
     // .nest("/api/products", product::routes())
 }
-

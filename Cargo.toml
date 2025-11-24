@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["apps/*", "crates/*", "migration"]
+members = ["apps/*", "crates/*"]
 
 [workspace.dependencies]
 # --- Async & Runtime ---
@@ -28,12 +28,13 @@ bon = "3.8.1"
 derive_more = { version = "2.0.1", features = ["full"] }
 
 #Database
-sea-orm = { version = "2.0.0-rc", features = [
-  "sqlx-postgres",
+sqlx = { version = "0.8", features = [
   "runtime-tokio-native-tls",
+  "postgres",
   "macros",
-  "with-rust_decimal",
-  "with-uuid",
+  "migrate",
+  "uuid",
+  "chrono",
 ] }
 
 utoipa = { version = "5.4.0", features = [

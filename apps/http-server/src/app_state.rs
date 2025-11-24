@@ -1,5 +1,5 @@
-use sea_orm::DatabaseConnection;
+use sqlx::PgPool;
 
 pub struct AppState {
-    pub connection: DatabaseConnection,
+    pub pool: PgPool,
 }

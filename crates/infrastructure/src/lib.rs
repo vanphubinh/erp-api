@@ -3,9 +3,3 @@ pub mod repositories {
 
     pub use organization_repository::*;
 }
-
-pub mod persistence {
-    pub mod entity;
-
-    pub use entity::*;
-}

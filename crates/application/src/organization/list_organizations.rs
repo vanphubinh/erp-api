@@ -1,10 +1,8 @@
 use crate::ports::OrganizationRepository;
 use domain::organization::Organization;
-use sea_orm::ConnectionTrait;
 use shared::{AppError, PaginationMeta};
 
-/// Use case: List organizations with pagination
-pub struct ListOrganizationsUseCase<R: OrganizationRepository> {
+pub struct ListOrganizationsUseCase<R> {
     repository: R,
 }
 
@@ -13,17 +11,17 @@ impl<R: OrganizationRepository> ListOrganizationsUseCase<R> {
         Self { repository }
     }
 
-    /// Get paginated list of organizations
-    /// Returns (items, pagination_meta)
-    pub async fn execute<C>(
+    pub async fn execute<'a, E>(
         &self,
-        conn: &C,
+        executor: E,
         page: u64,
         page_size: u64,
     ) -> Result<(Vec<Organization>, PaginationMeta), AppError>
     where
-        C: ConnectionTrait,
+        E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
     {
-        self.repository.find_paginated(conn, page, page_size).await
+        self.repository
+            .find_paginated(executor, page, page_size)
+            .await
     }
 }

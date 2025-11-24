@@ -1,76 +1,76 @@
-use std::env;
-use std::fs;
-use std::sync::Arc;
+use std::{env, fs, sync::Arc};
 
-use http_server::{app_state, config, routes};
-use sea_orm::Database;
-use tower_http::trace;
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing::info;
+use http_server::{app_state::AppState, config::Config, routes};
+use sqlx::postgres::PgPoolOptions;
+use tower_http::{LatencyUnit, cors::CorsLayer, trace::TraceLayer};
+use tracing::{Level, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
-use utoipa_scalar::{Scalar, Servable as ScalarServable};
+use utoipa_scalar::{Scalar, Servable};
+
+#[derive(OpenApi)]
+#[openapi(info(
+    title = "Van Phu Binh API",
+    version = "1.0.0",
+    description = "API for managing Van Phu Binh Internal System"
+))]
+struct ApiDoc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    #[derive(OpenApi)]
-    #[openapi(info(
-        title = "Van Phu Binh API",
-        version = "1.0.0",
-        description = "API for managing Van Phu Binh Internal System"
-    ))]
-    pub struct ApiDoc;
-
-    let config: config::Config = config::Config::new()?;
-
     init_tracing();
 
+    let config = Config::new()?;
     info!("Starting VPB ERP Backend...");
 
-    let openapi = ApiDoc::openapi();
+    // Initialize database pool with migrations
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&config.db_url)
+        .await?;
 
-    let conn = Database::connect(config.db_url)
-        .await
-        .expect("Database connection failed");
+    sqlx::migrate!("../../migrations").run(&pool).await?;
+    info!("✅ Database migrations completed");
 
-    let app_state = Arc::new(app_state::AppState { connection: conn });
+    let app_state = Arc::new(AppState { pool });
 
-    // Create API routes
-    let api_router = routes::api_routes();
-
-    let (app, openapi_doc) = OpenApiRouter::with_openapi(openapi.clone())
-        .merge(api_router)
+    // Build application with routes and OpenAPI docs
+    let (app, openapi) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .merge(routes::api_routes())
         .with_state(app_state)
         .split_for_parts();
 
-    let env = env::var("RUST_ENV").unwrap_or_else(|_| "development".to_string());
-    if env == "development" || env == "dev" {
-        generate_openapi_json(&openapi_doc)?;
+    // Generate OpenAPI JSON in development
+    if matches!(
+        env::var("RUST_ENV").as_deref(),
+        Ok("development" | "dev") | Err(_)
+    ) {
+        generate_openapi_json(&openapi)?;
     }
 
+    // Configure middleware
     let app = app
-        .merge(Scalar::with_url("/docs", openapi_doc.clone()))
+        .merge(Scalar::with_url("/docs", openapi))
         .layer(CorsLayer::permissive())
         .layer(
             TraceLayer::new_for_http()
-                .on_request(trace::DefaultOnRequest::new().level(tracing::Level::INFO))
+                .on_request(tower_http::trace::DefaultOnRequest::new().level(Level::INFO))
                 .on_response(
-                    trace::DefaultOnResponse::new()
-                        .level(tracing::Level::INFO)
-                        .latency_unit(tower_http::LatencyUnit::Millis),
+                    tower_http::trace::DefaultOnResponse::new()
+                        .level(Level::INFO)
+                        .latency_unit(LatencyUnit::Millis),
                 ),
         );
 
     let listener = tokio::net::TcpListener::bind(config.addr).await?;
-    info!("Listening on http://{}", config.addr);
+    info!("🚀 Listening on http://{}", config.addr);
 
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
 
     info!("Server shutdown complete");
-
     Ok(())
 }
 
@@ -92,16 +92,15 @@ fn init_tracing() {
 }
 
 fn generate_openapi_json(api: &utoipa::openapi::OpenApi) -> Result<(), Box<dyn std::error::Error>> {
-    let openapi_json = serde_json::to_string_pretty(api)?;
-
-    // Use current directory or workspace root
     let output_path = if fs::metadata("./apps/http-server").is_ok() {
         "./apps/http-server/openapi.json"
     } else {
         "./openapi.json"
     };
 
+    let openapi_json = serde_json::to_string_pretty(api)?;
     fs::write(output_path, &openapi_json)?;
+
     info!("✅ Generated OpenAPI spec: {}", output_path);
     info!("📄 {} bytes written", openapi_json.len());
     Ok(())

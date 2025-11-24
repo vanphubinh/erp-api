@@ -1,14 +1,12 @@
 use application::ports::OrganizationRepository;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use domain::organization::value_objects::{Email, Phone, Url};
 use domain::organization::{Organization, OrganizationName};
-use sea_orm::*;
 use shared::{AppError, PaginationMeta};
-use std::convert::TryFrom;
 use uuid::Uuid;
 
-use crate::persistence::entity::organization;
-
+#[derive(Default)]
 pub struct OrganizationRepositoryImpl;
 
 impl OrganizationRepositoryImpl {
@@ -17,124 +15,182 @@ impl OrganizationRepositoryImpl {
     }
 }
 
-// Mapping: SeaORM Model → Domain
-impl TryFrom<organization::Model> for Organization {
-    type Error = AppError;
+// SQL field list constant
+const SELECT_FIELDS: &str = "id, name, email, phone, website, industry, \
+                             address, city, state, postal_code, country_code, \
+                             timezone, currency, is_active, created_at, updated_at";
 
-    fn try_from(entity: organization::Model) -> Result<Self, Self::Error> {
-        Ok(Organization::from_storage(
-            entity.id,
-            OrganizationName::new(entity.name)?,
-            entity.email.map(Email::new).transpose()?,
-            entity.phone.map(Phone::new).transpose()?,
-            entity.website.map(Url::new).transpose()?,
-            entity.industry,
-            entity.address,
-            entity.city,
-            entity.state,
-            entity.postal_code,
-            entity.country_code,
-            entity.timezone,
-            entity.currency,
-            entity.is_active,
-            entity.created_at.naive_utc().and_utc(), // DateTimeWithTimeZone → DateTime<Utc>
-            entity.updated_at.naive_utc().and_utc(),
-        ))
-    }
+// Private row struct for database deserialization
+#[derive(sqlx::FromRow)]
+struct OrganizationRow {
+    id: Uuid,
+    name: String,
+    email: Option<String>,
+    phone: Option<String>,
+    website: Option<String>,
+    industry: Option<String>,
+    address: Option<String>,
+    city: Option<String>,
+    state: Option<String>,
+    postal_code: Option<String>,
+    country_code: Option<String>,
+    timezone: Option<String>,
+    currency: Option<String>,
+    is_active: bool,
+    created_at: DateTime<Utc>,
+    updated_at: DateTime<Utc>,
 }
 
-// Mapping: Domain → SeaORM ActiveModel
-impl From<Organization> for organization::ActiveModel {
-    fn from(org: Organization) -> Self {
-        organization::ActiveModel {
-            id: Set(org.id()),
-            name: Set(org.name().value().to_string()),
-            email: Set(org.email().map(|e| e.to_string())),
-            phone: Set(org.phone().map(|p| p.to_string())),
-            website: Set(org.website().map(|w| w.to_string())),
-            industry: Set(org.industry().map(|s| s.to_string())),
-            address: Set(org.address().map(|s| s.to_string())),
-            city: Set(org.city().map(|s| s.to_string())),
-            state: Set(org.state().map(|s| s.to_string())),
-            postal_code: Set(org.postal_code().map(|s| s.to_string())),
-            country_code: Set(org.country_code().map(|s| s.to_string())),
-            timezone: Set(org.timezone().map(|s| s.to_string())),
-            currency: Set(org.currency().map(|s| s.to_string())),
-            is_active: Set(org.is_active()),
-            created_at: Set(org.created_at().into()), // DateTime<Utc> → DateTimeWithTimeZone
-            updated_at: Set(org.updated_at().into()),
-        }
+impl OrganizationRow {
+    fn to_domain(self) -> Result<Organization, AppError> {
+        Ok(Organization::from_storage(
+            self.id,
+            OrganizationName::new(self.name)?,
+            self.email.map(Email::new).transpose()?,
+            self.phone.map(Phone::new).transpose()?,
+            self.website.map(Url::new).transpose()?,
+            self.industry,
+            self.address,
+            self.city,
+            self.state,
+            self.postal_code,
+            self.country_code,
+            self.timezone,
+            self.currency,
+            self.is_active,
+            self.created_at,
+            self.updated_at,
+        ))
     }
 }
 
 #[async_trait]
 impl OrganizationRepository for OrganizationRepositoryImpl {
-    async fn save<C>(&self, conn: &C, organization: &Organization) -> Result<(), AppError>
+    async fn create<'a, E>(&self, executor: E, organization: &Organization) -> Result<(), AppError>
     where
-        C: ConnectionTrait,
+        E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
     {
-        let active_model: organization::ActiveModel = organization.clone().into();
-        active_model.insert(conn).await?;
+        sqlx::query(&format!(
+            "INSERT INTO organization ({SELECT_FIELDS}) \
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)"
+        ))
+        .bind(organization.id())
+        .bind(organization.name().value())
+        .bind(organization.email().map(|e| e.to_string()))
+        .bind(organization.phone().map(|p| p.to_string()))
+        .bind(organization.website().map(|w| w.to_string()))
+        .bind(organization.industry())
+        .bind(organization.address())
+        .bind(organization.city())
+        .bind(organization.state())
+        .bind(organization.postal_code())
+        .bind(organization.country_code())
+        .bind(organization.timezone())
+        .bind(organization.currency())
+        .bind(organization.is_active())
+        .bind(organization.created_at())
+        .bind(organization.updated_at())
+        .execute(&mut *executor.acquire().await?)
+        .await?;
+
         Ok(())
     }
 
-    async fn update<C>(&self, conn: &C, organization: &Organization) -> Result<(), AppError>
+    async fn update<'a, E>(&self, executor: E, organization: &Organization) -> Result<(), AppError>
     where
-        C: ConnectionTrait,
+        E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
     {
-        let active_model: organization::ActiveModel = organization.clone().into();
-        active_model.update(conn).await?;
+        sqlx::query(
+            "UPDATE organization SET \
+             name = $2, email = $3, phone = $4, website = $5, industry = $6, \
+             address = $7, city = $8, state = $9, postal_code = $10, country_code = $11, \
+             timezone = $12, currency = $13, is_active = $14, updated_at = $15 \
+             WHERE id = $1",
+        )
+        .bind(organization.id())
+        .bind(organization.name().value())
+        .bind(organization.email().map(|e| e.to_string()))
+        .bind(organization.phone().map(|p| p.to_string()))
+        .bind(organization.website().map(|w| w.to_string()))
+        .bind(organization.industry())
+        .bind(organization.address())
+        .bind(organization.city())
+        .bind(organization.state())
+        .bind(organization.postal_code())
+        .bind(organization.country_code())
+        .bind(organization.timezone())
+        .bind(organization.currency())
+        .bind(organization.is_active())
+        .bind(organization.updated_at())
+        .execute(&mut *executor.acquire().await?)
+        .await?;
+
         Ok(())
     }
 
-    async fn find_by_id<C>(&self, conn: &C, id: Uuid) -> Result<Option<Organization>, AppError>
-    where
-        C: ConnectionTrait,
-    {
-        organization::Entity::find_by_id(id)
-            .one(conn)
-            .await?
-            .map(Organization::try_from)
-            .transpose()
-    }
-
-    async fn find_paginated<C>(
+    async fn find_by_id<'a, E>(
         &self,
-        conn: &C,
+        executor: E,
+        id: Uuid,
+    ) -> Result<Option<Organization>, AppError>
+    where
+        E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
+    {
+        sqlx::query_as::<_, OrganizationRow>(&format!(
+            "SELECT {SELECT_FIELDS} FROM organization WHERE id = $1"
+        ))
+        .bind(id)
+        .fetch_optional(&mut *executor.acquire().await?)
+        .await?
+        .map(|row| row.to_domain())
+        .transpose()
+    }
+
+    async fn find_paginated<'a, E>(
+        &self,
+        executor: E,
         page: u64,
         page_size: u64,
     ) -> Result<(Vec<Organization>, PaginationMeta), AppError>
     where
-        C: ConnectionTrait,
+        E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
     {
-        // Get total count
-        let total = organization::Entity::find().count(conn).await?;
+        let mut conn = executor.acquire().await?;
 
-        // Calculate offset
-        let offset = (page.saturating_sub(1)) * page_size;
+        // Get total count
+        let (total,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM organization")
+            .fetch_one(&mut *conn)
+            .await?;
 
         // Get paginated results
-        let organizations = organization::Entity::find()
-            .offset(offset)
-            .limit(page_size)
-            .order_by_desc(organization::Column::CreatedAt)
-            .all(conn)
-            .await?
-            .into_iter()
-            .map(Organization::try_from)
-            .collect::<Result<Vec<_>, _>>()?;
+        let offset = page.saturating_sub(1) * page_size;
+        let organizations: Vec<Organization> = sqlx::query_as::<_, OrganizationRow>(&format!(
+            "SELECT {SELECT_FIELDS} FROM organization \
+             ORDER BY created_at DESC LIMIT $1 OFFSET $2"
+        ))
+        .bind(page_size as i64)
+        .bind(offset as i64)
+        .fetch_all(&mut *conn)
+        .await?
+        .into_iter()
+        .map(|row| row.to_domain())
+        .collect::<Result<Vec<_>, _>>()?;
 
-        // Create pagination metadata
-        let pagination_meta = PaginationMeta::new(page, page_size, total);
-
-        Ok((organizations, pagination_meta))
+        Ok((
+            organizations,
+            PaginationMeta::new(page, page_size, total as u64),
+        ))
     }
 
-    async fn delete<C>(&self, conn: &C, id: Uuid) -> Result<(), AppError>
+    async fn delete<'a, E>(&self, executor: E, id: Uuid) -> Result<(), AppError>
     where
-        C: ConnectionTrait,
+        E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
     {
-        organization::Entity::delete_by_id(id).exec(conn).await?;
+        sqlx::query("DELETE FROM organization WHERE id = $1")
+            .bind(id)
+            .execute(&mut *executor.acquire().await?)
+            .await?;
+
         Ok(())
     }
 }
