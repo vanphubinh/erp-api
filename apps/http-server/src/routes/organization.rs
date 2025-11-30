@@ -15,9 +15,10 @@ use utoipa_axum::routes;
 /// PUT    /api/organizations/activate/:id  - Activate organization
 /// PUT    /api/organizations/deactivate/:id - Deactivate organization
 pub fn routes() -> OpenApiRouter<Arc<AppState>> {
-    OpenApiRouter::new().routes(routes!(organization::list_organizations))
-    // .routes(routes!(organization::get_organization))
-    // .routes(routes!(organization::create_organization))
+    OpenApiRouter::new()
+        .routes(routes!(organization::list_organizations))
+        .routes(routes!(organization::get_organization))
+        .routes(routes!(organization::create_organization))
     // .routes(routes!(organization::update_organization))
     // .routes(routes!(organization::delete_organization))
     // .routes(routes!(organization::activate_organization))

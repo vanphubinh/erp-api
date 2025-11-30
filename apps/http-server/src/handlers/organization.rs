@@ -1,10 +1,14 @@
 use crate::app_state::AppState;
-use application::organization::ListOrganizationsUseCase;
-use axum::{Json, extract::Query, extract::State, response::IntoResponse};
+use crate::dto::{CreateOrganizationRequest, CreateOrganizationResponse};
+use application::organization::{
+    CreateOrganizationUseCase, GetOrganizationUseCase, ListOrganizationsUseCase,
+};
+use axum::{Json, extract::Path, extract::Query, extract::State, response::IntoResponse};
 use domain::organization::Organization;
 use infrastructure::repositories::OrganizationRepositoryImpl;
-use shared::{AppError, PageParams, SuccessResponse, success_with_pagination};
+use shared::{AppError, PageParams, SuccessResponse, created, success, success_with_pagination};
 use std::sync::Arc;
+use uuid::Uuid;
 
 /// List organizations with pagination
 #[utoipa::path(
@@ -30,4 +34,107 @@ pub async fn list_organizations(
             .await?;
 
     Ok(Json(success_with_pagination(organizations, pagination)))
+}
+
+/// Create a new organization
+#[utoipa::path(
+    post,
+    path = "/create",
+    request_body(
+        content = CreateOrganizationRequest,
+        description = "Organization data to create",
+        content_type = "application/json"
+    ),
+    responses(
+        (
+            status = 201,
+            description = "Organization created successfully",
+            body = inline(SuccessResponse<CreateOrganizationResponse>)
+        ),
+        (
+            status = 400,
+            description = "Invalid request data - validation failed",
+            body = inline(shared::ErrorResponse)
+        ),
+        (
+            status = 422,
+            description = "Business rule violation",
+            body = inline(shared::ErrorResponse)
+        ),
+        (
+            status = 500,
+            description = "Internal server error",
+            body = inline(shared::ErrorResponse)
+        )
+    ),
+    tag = "Organizations"
+)]
+pub async fn create_organization(
+    State(app_state): State<Arc<AppState>>,
+    Json(request): Json<CreateOrganizationRequest>,
+) -> Result<impl IntoResponse, AppError> {
+    let input = application::organization::CreateOrganizationInput {
+        name: request.name,
+        email: request.email,
+        phone: request.phone,
+        website: request.website,
+        industry: request.industry,
+        address: request.address,
+        city: request.city,
+        state: request.state,
+        postal_code: request.postal_code,
+        country_code: request.country_code,
+        timezone: request.timezone,
+        currency: request.currency,
+    };
+
+    let organization = CreateOrganizationUseCase::new(OrganizationRepositoryImpl::new())
+        .execute(&app_state.pool, input)
+        .await?;
+
+    Ok(created(CreateOrganizationResponse {
+        id: organization.id(),
+    }))
+}
+
+/// Get a single organization by ID
+#[utoipa::path(
+    get,
+    path = "/get/{id}",
+    params(
+        ("id" = Uuid, Path, description = "Organization unique identifier")
+    ),
+    responses(
+        (
+            status = 200,
+            description = "Successfully retrieved organization",
+            body = inline(SuccessResponse<Organization>)
+        ),
+        (
+            status = 404,
+            description = "Organization not found",
+            body = inline(shared::ErrorResponse)
+        ),
+        (
+            status = 400,
+            description = "Invalid UUID format",
+            body = inline(shared::ErrorResponse)
+        ),
+        (
+            status = 500,
+            description = "Internal server error",
+            body = inline(shared::ErrorResponse)
+        )
+    ),
+    tag = "Organizations"
+)]
+pub async fn get_organization(
+    State(app_state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, AppError> {
+    let organization = GetOrganizationUseCase::new(OrganizationRepositoryImpl::new())
+        .execute(&app_state.pool, id)
+        .await?;
+
+    Ok(Json(success(organization)))
 }
