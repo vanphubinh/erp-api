@@ -2,7 +2,6 @@ use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use utoipa::ToSchema;
 

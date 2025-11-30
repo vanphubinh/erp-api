@@ -14,7 +14,7 @@ impl Config {
         let port = env::var("PORT")
             .ok()
             .and_then(|p| p.parse().ok())
-            .unwrap_or(3000);
+            .unwrap_or(3171);
 
         let addr = format!("{host}:{port}")
             .parse()
