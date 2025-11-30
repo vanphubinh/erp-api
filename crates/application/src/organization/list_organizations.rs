@@ -14,8 +14,8 @@ impl<R: OrganizationRepository> ListOrganizationsUseCase<R> {
     pub async fn execute<'a, E>(
         &self,
         executor: E,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> Result<(Vec<Organization>, PaginationMeta), AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,

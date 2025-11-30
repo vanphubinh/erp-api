@@ -149,8 +149,8 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
     async fn find_paginated<'a, E>(
         &self,
         executor: E,
-        page: u64,
-        page_size: u64,
+        page: u32,
+        page_size: u32,
     ) -> Result<(Vec<Organization>, PaginationMeta), AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send,
@@ -163,7 +163,7 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
             .await?;
 
         // Get paginated results
-        let offset = page.saturating_sub(1) * page_size;
+        let offset = u64::from(page.saturating_sub(1)) * u64::from(page_size);
         let organizations: Vec<Organization> = sqlx::query_as::<_, OrganizationRow>(&format!(
             "SELECT {SELECT_FIELDS} FROM organization \
              ORDER BY created_at DESC LIMIT $1 OFFSET $2"
@@ -176,9 +176,10 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
         .map(|row| row.to_domain())
         .collect::<Result<Vec<_>, _>>()?;
 
+        let total_u32 = total.try_into().unwrap_or(u32::MAX);
         Ok((
             organizations,
-            PaginationMeta::new(page, page_size, total as u64),
+            PaginationMeta::new(page, page_size, total_u32),
         ))
     }
 
