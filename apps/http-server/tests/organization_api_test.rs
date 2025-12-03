@@ -257,3 +257,41 @@ async fn list_organizations_pagination() {
     assert!(body["data"].as_array().unwrap().len() <= 5);
     assert!(body["meta"]["pagination"]["page"].is_number());
 }
+
+// =============================================================================
+// Error Cases
+// =============================================================================
+
+#[tokio::test]
+async fn create_organization_fails_with_invalid_website() {
+    let pool = get_test_pool().await;
+    let app = app(pool);
+
+    let mut payload = minimal_org()(&unique_name("InvalidWebsite"));
+    payload["website"] = json!("not-a-url");
+
+    let (status, _) = post_json(&app, "/api/organizations/create", &payload).await;
+
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn create_organization_fails_with_name_too_long() {
+    let pool = get_test_pool().await;
+    let app = app(pool);
+
+    let long_name = "a".repeat(256);
+    let (status, _) = post_json(&app, "/api/organizations/create", &minimal_org()(&long_name)).await;
+
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn get_organization_fails_with_invalid_uuid() {
+    let pool = get_test_pool().await;
+    let app = app(pool);
+
+    let (status, _) = get_json(&app, "/api/organizations/get/not-a-uuid").await;
+
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}

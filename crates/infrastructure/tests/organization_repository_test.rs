@@ -127,3 +127,42 @@ async fn pagination_page_size() {
 
     assert!(items.len() <= 5);
 }
+
+// ============================================================================
+// Error Cases
+// ============================================================================
+
+#[tokio::test]
+async fn delete_nonexistent_succeeds_silently() {
+    let pool = get_test_pool().await;
+    let repo = OrganizationRepositoryImpl::new();
+
+    // Deleting non-existent ID should not error (idempotent)
+    let result = repo.delete(&pool, uuid::Uuid::now_v7()).await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn update_nonexistent_succeeds_silently() {
+    let pool = get_test_pool().await;
+    let repo = OrganizationRepositoryImpl::new();
+
+    // Create org but don't persist it
+    let org = fake_org();
+
+    // Update should succeed (affected 0 rows is not an error)
+    let result = repo.update(&pool, &org).await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn pagination_empty_result() {
+    let pool = get_test_pool().await;
+    let repo = OrganizationRepositoryImpl::new();
+
+    // Request page far beyond data
+    let (items, meta) = repo.find_paginated(&pool, 9999, 10).await.unwrap();
+
+    assert!(items.is_empty());
+    assert_eq!(meta.page, 9999);
+}

@@ -204,3 +204,45 @@ async fn list_organizations_pagination() {
     assert!(orgs.len() <= 5);
     assert_eq!(pagination.page, 1);
 }
+
+// =============================================================================
+// Error Cases
+// =============================================================================
+
+#[tokio::test]
+async fn create_organization_fails_with_invalid_website() {
+    let pool = get_test_pool().await;
+    let use_case = CreateOrganizationUseCase::new(repo());
+    let mut input = minimal_input()(&unique_name("InvalidWebsite"));
+    input.website = "not-a-url".to_string();
+
+    let result = use_case.execute(&pool, input).await;
+
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn create_organization_fails_with_name_too_long() {
+    let pool = get_test_pool().await;
+    let use_case = CreateOrganizationUseCase::new(repo());
+    let long_name = "a".repeat(256);
+
+    let result = use_case.execute(&pool, minimal_input()(&long_name)).await;
+
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn create_organization_accepts_empty_optional_fields() {
+    let pool = get_test_pool().await;
+    let use_case = CreateOrganizationUseCase::new(repo());
+
+    // All optional fields empty - should succeed
+    let result = use_case.execute(&pool, minimal_input()(&unique_name("EmptyOptionals"))).await;
+
+    assert!(result.is_ok());
+    let org = result.unwrap();
+    assert!(org.email().is_none());
+    assert!(org.phone().is_none());
+    assert!(org.website().is_none());
+}
