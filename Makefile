@@ -9,9 +9,10 @@ test-all: db-start
 	cargo test --workspace
 	@$(MAKE) db-clean
 
-# Run unit tests only (no DB required)
+# Run unit tests only (no DB required) - fast!
 test-unit:
-	cargo test --workspace --lib
+	cargo test --package domain
+	cargo test --package shared
 
 # Run repository tests (infrastructure)
 test-repo: db-start

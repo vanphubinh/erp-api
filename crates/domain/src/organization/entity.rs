@@ -202,3 +202,82 @@ impl Organization {
         self.updated_at = Utc::now();
     }
 }
+
+// =============================================================================
+// Unit Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_org(name: &str) -> Organization {
+        Organization::new(OrganizationName::new(name).unwrap())
+    }
+
+    #[test]
+    fn new_organization_has_defaults() {
+        let org = create_org("Test Corp");
+
+        assert_eq!(org.name().value(), "Test Corp");
+        assert!(org.is_active());
+        assert!(org.email().is_none());
+        assert!(org.phone().is_none());
+        assert!(org.website().is_none());
+    }
+
+    #[test]
+    fn new_organization_has_uuid_v7() {
+        let org = create_org("Test Corp");
+        // UUID v7 starts with timestamp, so it should be non-zero
+        assert!(!org.id().is_nil());
+    }
+
+    #[test]
+    fn new_organization_has_timestamps() {
+        let before = Utc::now();
+        let org = create_org("Test Corp");
+        let after = Utc::now();
+
+        assert!(org.created_at() >= before);
+        assert!(org.created_at() <= after);
+        assert_eq!(org.created_at(), org.updated_at());
+    }
+
+    #[test]
+    fn activate_sets_active_and_updates_timestamp() {
+        let mut org = create_org("Test Corp");
+        org.deactivate();
+        let before_update = org.updated_at();
+
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        org.activate();
+
+        assert!(org.is_active());
+        assert!(org.updated_at() > before_update);
+    }
+
+    #[test]
+    fn deactivate_sets_inactive_and_updates_timestamp() {
+        let mut org = create_org("Test Corp");
+        let before_update = org.updated_at();
+
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        org.deactivate();
+
+        assert!(!org.is_active());
+        assert!(org.updated_at() > before_update);
+    }
+
+    #[test]
+    fn update_name_changes_name_and_timestamp() {
+        let mut org = create_org("Old Name");
+        let before_update = org.updated_at();
+
+        std::thread::sleep(std::time::Duration::from_millis(1));
+        org.update_name(OrganizationName::new("New Name").unwrap());
+
+        assert_eq!(org.name().value(), "New Name");
+        assert!(org.updated_at() > before_update);
+    }
+}

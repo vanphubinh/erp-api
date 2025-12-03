@@ -75,3 +75,120 @@ impl Url {
         Ok(Self(url))
     }
 }
+
+// =============================================================================
+// Unit Tests
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod organization_name {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_name() {
+            let name = OrganizationName::new("Acme Corp").unwrap();
+            assert_eq!(name.value(), "Acme Corp");
+        }
+
+        #[test]
+        fn trims_whitespace() {
+            let name = OrganizationName::new("  Acme Corp  ").unwrap();
+            assert_eq!(name.value(), "Acme Corp");
+        }
+
+        #[test]
+        fn rejects_empty_name() {
+            assert!(OrganizationName::new("").is_err());
+            assert!(OrganizationName::new("   ").is_err());
+        }
+
+        #[test]
+        fn rejects_too_long_name() {
+            let long_name = "a".repeat(256);
+            assert!(OrganizationName::new(long_name).is_err());
+        }
+
+        #[test]
+        fn accepts_max_length_name() {
+            let max_name = "a".repeat(255);
+            assert!(OrganizationName::new(max_name).is_ok());
+        }
+    }
+
+    mod email {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_email() {
+            assert!(Email::new("test@example.com").is_ok());
+            assert!(Email::new("user@domain.org").is_ok());
+        }
+
+        #[test]
+        fn rejects_email_without_at() {
+            assert!(Email::new("invalid-email").is_err());
+        }
+
+        #[test]
+        fn rejects_too_short_email() {
+            assert!(Email::new("a@").is_err());
+        }
+
+        #[test]
+        fn trims_whitespace() {
+            let email = Email::new("  test@example.com  ").unwrap();
+            assert_eq!(&*email, "test@example.com");
+        }
+    }
+
+    mod phone {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_phone() {
+            assert!(Phone::new("+1-555-0100").is_ok());
+            assert!(Phone::new("555-0100").is_ok());
+        }
+
+        #[test]
+        fn rejects_empty_phone() {
+            assert!(Phone::new("").is_err());
+            assert!(Phone::new("   ").is_err());
+        }
+
+        #[test]
+        fn trims_whitespace() {
+            let phone = Phone::new("  +1-555-0100  ").unwrap();
+            assert_eq!(&*phone, "+1-555-0100");
+        }
+    }
+
+    mod url {
+        use super::*;
+
+        #[test]
+        fn accepts_https_url() {
+            assert!(Url::new("https://example.com").is_ok());
+        }
+
+        #[test]
+        fn accepts_http_url() {
+            assert!(Url::new("http://example.com").is_ok());
+        }
+
+        #[test]
+        fn rejects_invalid_url() {
+            assert!(Url::new("example.com").is_err());
+            assert!(Url::new("ftp://example.com").is_err());
+        }
+
+        #[test]
+        fn trims_whitespace() {
+            let url = Url::new("  https://example.com  ").unwrap();
+            assert_eq!(&*url, "https://example.com");
+        }
+    }
+}
