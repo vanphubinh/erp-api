@@ -25,3 +25,10 @@ utoipa-scalar = { workspace = true }
 utoipauto = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true }
+
+[dev-dependencies]
+fake = { version = "4.4", features = ["derive", "uuid", "chrono"] }
+rstest = "0.24"
+tower = { version = "0.5" }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }

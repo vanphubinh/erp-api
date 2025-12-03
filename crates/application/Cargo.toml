@@ -11,3 +11,10 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 async-trait = { workspace = true }
 sqlx = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+fake = { version = "4.4", features = ["derive", "uuid", "chrono"] }
+infrastructure = { path = "../infrastructure" }
+sqlx = { workspace = true }
+rstest = "0.24"

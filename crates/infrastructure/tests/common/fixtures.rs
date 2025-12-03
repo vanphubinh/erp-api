@@ -13,6 +13,15 @@ use infrastructure::repositories::OrganizationRepositoryImpl;
 use sqlx::PgPool;
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/// Generate unique name to avoid test conflicts in shared DB
+pub fn unique_name(prefix: &str) -> String {
+    format!("{}_{}", prefix, uuid::Uuid::now_v7())
+}
+
+// ============================================================================
 // Organization Factories
 // ============================================================================
 
@@ -21,9 +30,9 @@ pub fn org(name: &str) -> Organization {
     Organization::new(OrganizationName::new(name).unwrap())
 }
 
-/// Create organization with fake company name
+/// Create organization with unique fake company name
 pub fn fake_org() -> Organization {
-    org(&CompanyName().fake::<String>())
+    org(&unique_name(&CompanyName().fake::<String>()))
 }
 
 /// Create organization with all fields populated
@@ -82,14 +91,14 @@ pub async fn seed_one(pool: &PgPool, repo: &OrganizationRepositoryImpl) -> Organ
     o
 }
 
-/// Seed predefined organizations for deterministic tests
+/// Seed predefined organizations with unique names
 pub async fn seed_known(
     pool: &PgPool,
     repo: &OrganizationRepositoryImpl,
 ) -> (Organization, Organization, Organization) {
-    let acme = org("Acme Corporation");
-    let wayne = org("Wayne Enterprises");
-    let stark = org("Stark Industries");
+    let acme = org(&unique_name("Acme"));
+    let wayne = org(&unique_name("Wayne"));
+    let stark = org(&unique_name("Stark"));
 
     repo.create(pool, &acme).await.unwrap();
     repo.create(pool, &wayne).await.unwrap();

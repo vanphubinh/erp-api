@@ -1,12 +1,43 @@
-.PHONY: test test-db db-start db-clean db-stop build run clean
+.PHONY: test test-all test-unit test-repo test-service test-api db-start db-clean db-stop build run clean
 
-# Run all tests
-test:
-	cargo test
+# =============================================================================
+# Testing
+# =============================================================================
 
-# Run infrastructure (database) tests
-test-db:
-	./scripts/test-infrastructure.sh
+# Run all tests (unit + integration)
+test-all: db-start
+	cargo test --workspace
+	@$(MAKE) db-clean
+
+# Run unit tests only (no DB required)
+test-unit:
+	cargo test --workspace --lib
+
+# Run repository tests (infrastructure)
+test-repo: db-start
+	cargo test --package infrastructure
+	@$(MAKE) db-clean
+
+# Run service layer tests (application)
+test-service: db-start
+	cargo test --package application
+	@$(MAKE) db-clean
+
+# Run API tests (http-server)
+test-api: db-start
+	cargo test --package http-server
+	@$(MAKE) db-clean
+
+# Default: run all DB tests
+test: db-start
+	cargo test --package infrastructure
+	cargo test --package application
+	cargo test --package http-server
+	@$(MAKE) db-clean
+
+# =============================================================================
+# Database Management
+# =============================================================================
 
 # Start database container
 db-start:
@@ -20,6 +51,10 @@ db-clean:
 db-stop:
 	./scripts/test-infrastructure.sh stop
 
+# =============================================================================
+# Development
+# =============================================================================
+
 # Build the project
 build:
 	cargo build
@@ -31,3 +66,15 @@ run:
 # Clean build artifacts
 clean:
 	cargo clean
+
+# Check code
+check:
+	cargo check --workspace
+
+# Format code
+fmt:
+	cargo fmt --all
+
+# Lint
+lint:
+	cargo clippy --workspace
