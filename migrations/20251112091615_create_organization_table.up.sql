@@ -1,43 +1,40 @@
+-- Enable UUID v7 extension
+CREATE EXTENSION IF NOT EXISTS pg_uuidv7;
+
 -- Create organization table
 CREATE TABLE organization (
-    id UUID PRIMARY KEY,
-    name TEXT NOT NULL,
-    email TEXT,
-    phone TEXT,
-    website TEXT,
-    industry TEXT,
-    address TEXT,
-    city TEXT,
-    state TEXT,
-    postal_code TEXT,
-    country_code TEXT,
-    timezone TEXT,
-    currency TEXT,
-    is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    code            TEXT UNIQUE,
+    name            TEXT NOT NULL,
+    display_name    TEXT,
+    tax_number      TEXT,
+    registration_no TEXT,
+    phone           TEXT,
+    email           TEXT,
+    website         TEXT,
+    parent_id       UUID REFERENCES organization(id),
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Create indexes
+CREATE INDEX idx_organization_code ON organization(code);
 CREATE INDEX idx_organization_name ON organization(name);
-CREATE INDEX idx_organization_country ON organization(country_code);
+CREATE INDEX idx_organization_parent ON organization(parent_id);
 
 -- Add comments
-COMMENT ON TABLE organization IS 'Organization/Company master data';
-COMMENT ON COLUMN organization.id IS 'Organization unique identifier';
-COMMENT ON COLUMN organization.name IS 'Organization name';
-COMMENT ON COLUMN organization.email IS 'Primary email';
+COMMENT ON TABLE organization IS 'Organization/Company master data with hierarchy support';
+COMMENT ON COLUMN organization.id IS 'Organization unique identifier (UUID v7)';
+COMMENT ON COLUMN organization.code IS 'Unique organization code (e.g., ORG-001)';
+COMMENT ON COLUMN organization.name IS 'Legal organization name';
+COMMENT ON COLUMN organization.display_name IS 'Display/trading name';
+COMMENT ON COLUMN organization.tax_number IS 'Tax identification number (MST for Vietnam)';
+COMMENT ON COLUMN organization.registration_no IS 'Business registration number';
 COMMENT ON COLUMN organization.phone IS 'Primary phone number';
+COMMENT ON COLUMN organization.email IS 'Primary email';
 COMMENT ON COLUMN organization.website IS 'Company website URL';
-COMMENT ON COLUMN organization.industry IS 'Industry type';
-COMMENT ON COLUMN organization.address IS 'Street address';
-COMMENT ON COLUMN organization.city IS 'City';
-COMMENT ON COLUMN organization.state IS 'State/Province';
-COMMENT ON COLUMN organization.postal_code IS 'Postal/ZIP code';
-COMMENT ON COLUMN organization.country_code IS 'ISO 3166-1 alpha-2 country code (e.g., US, GB, TH)';
-COMMENT ON COLUMN organization.timezone IS 'IANA timezone (e.g., America/New_York, Asia/Bangkok)';
-COMMENT ON COLUMN organization.currency IS 'ISO 4217 currency code (e.g., USD, EUR, THB)';
-COMMENT ON COLUMN organization.is_active IS 'Is organization active';
+COMMENT ON COLUMN organization.parent_id IS 'Parent organization for hierarchy (sub-companies)';
+COMMENT ON COLUMN organization.metadata IS 'Flexible metadata (JSON)';
 COMMENT ON COLUMN organization.created_at IS 'Creation timestamp';
 COMMENT ON COLUMN organization.updated_at IS 'Last update timestamp';
-

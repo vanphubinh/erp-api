@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -6,53 +7,52 @@ use uuid::Uuid;
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateOrganizationRequest {
-    /// Organization name (required, 2-255 characters)
+    /// Unique organization code (optional, e.g., ORG-001)
+    #[schema(example = "ORG-001")]
+    #[serde(default)]
+    pub code: String,
+
+    /// Organization legal name (required, 2-255 characters)
     #[schema(example = "Acme Corporation", min_length = 2, max_length = 255)]
     pub name: String,
 
-    /// Primary email address (optional, empty string if not provided)
-    #[schema(example = "contact@acme.com", min_length = 0)]
-    pub email: String,
+    /// Display/trading name (optional)
+    #[schema(example = "Acme Corp")]
+    #[serde(default)]
+    pub display_name: String,
 
-    /// Primary phone number (optional, empty string if not provided)
-    #[schema(example = "+1-555-0100", min_length = 0)]
+    /// Tax identification number (optional, MST for Vietnam)
+    #[schema(example = "0123456789")]
+    #[serde(default)]
+    pub tax_number: String,
+
+    /// Business registration number (optional)
+    #[schema(example = "BRN-12345")]
+    #[serde(default)]
+    pub registration_no: String,
+
+    /// Primary phone number (optional)
+    #[schema(example = "+1-555-0100")]
+    #[serde(default)]
     pub phone: String,
 
-    /// Company website URL (optional, must start with http:// or https:// if provided)
-    #[schema(example = "https://acme.com", min_length = 0)]
+    /// Primary email address (optional)
+    #[schema(example = "contact@acme.com")]
+    #[serde(default)]
+    pub email: String,
+
+    /// Company website URL (optional, must start with http:// or https://)
+    #[schema(example = "https://acme.com")]
+    #[serde(default)]
     pub website: String,
 
-    /// Industry type (optional, empty string if not provided)
-    #[schema(example = "Technology", min_length = 0)]
-    pub industry: String,
+    /// Parent organization ID for hierarchy (optional)
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440001")]
+    pub parent_id: Option<Uuid>,
 
-    /// Street address (optional, empty string if not provided)
-    #[schema(example = "123 Main Street", min_length = 0)]
-    pub address: String,
-
-    /// City (optional, empty string if not provided)
-    #[schema(example = "San Francisco", min_length = 0)]
-    pub city: String,
-
-    /// State or Province (optional, empty string if not provided)
-    #[schema(example = "CA", min_length = 0)]
-    pub state: String,
-
-    /// Postal or ZIP code (optional, empty string if not provided)
-    #[schema(example = "94105", min_length = 0)]
-    pub postal_code: String,
-
-    /// ISO 3166-1 alpha-2 country code (optional, e.g., US, GB, TH)
-    #[schema(example = "US", min_length = 0)]
-    pub country_code: String,
-
-    /// IANA timezone identifier (optional, e.g., America/New_York, Asia/Bangkok)
-    #[schema(example = "America/Los_Angeles", min_length = 0)]
-    pub timezone: String,
-
-    /// ISO 4217 currency code (optional, e.g., USD, EUR, THB)
-    #[schema(example = "USD", min_length = 0)]
-    pub currency: String,
+    /// Flexible metadata (optional JSON object)
+    #[schema(example = json!({"industry": "Technology", "size": "Large"}))]
+    pub metadata: Option<JsonValue>,
 }
 
 /// Response after successfully creating an organization

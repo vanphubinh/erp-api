@@ -28,7 +28,6 @@ async fn create_and_find() {
 
     assert_eq!(found.id(), org.id());
     assert_eq!(found.name().value(), org.name().value());
-    assert!(found.is_active());
 }
 
 #[tokio::test]
@@ -44,8 +43,8 @@ async fn create_with_all_fields() {
     assert!(found.email().is_some());
     assert!(found.phone().is_some());
     assert!(found.website().is_some());
-    assert!(found.industry().is_some());
-    assert!(found.city().is_some());
+    assert!(found.code().is_some());
+    assert!(found.display_name().is_some());
 }
 
 #[tokio::test]

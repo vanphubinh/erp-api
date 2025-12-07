@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use domain::organization::value_objects::{Email, Phone, Url};
 use domain::organization::{Organization, OrganizationName};
+use serde_json::Value as JsonValue;
 use shared::{AppError, PaginationMeta};
 use uuid::Uuid;
 
@@ -16,27 +17,23 @@ impl OrganizationRepositoryImpl {
 }
 
 // SQL field list constant
-const SELECT_FIELDS: &str = "id, name, email, phone, website, industry, \
-                             address, city, state, postal_code, country_code, \
-                             timezone, currency, is_active, created_at, updated_at";
+const SELECT_FIELDS: &str = "id, code, name, display_name, tax_number, registration_no, \
+                             phone, email, website, parent_id, metadata, created_at, updated_at";
 
 // Private row struct for database deserialization
 #[derive(sqlx::FromRow)]
 struct OrganizationRow {
     id: Uuid,
+    code: Option<String>,
     name: String,
-    email: Option<String>,
+    display_name: Option<String>,
+    tax_number: Option<String>,
+    registration_no: Option<String>,
     phone: Option<String>,
+    email: Option<String>,
     website: Option<String>,
-    industry: Option<String>,
-    address: Option<String>,
-    city: Option<String>,
-    state: Option<String>,
-    postal_code: Option<String>,
-    country_code: Option<String>,
-    timezone: Option<String>,
-    currency: Option<String>,
-    is_active: bool,
+    parent_id: Option<Uuid>,
+    metadata: JsonValue,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -45,19 +42,16 @@ impl OrganizationRow {
     fn to_domain(self) -> Result<Organization, AppError> {
         Ok(Organization::from_storage(
             self.id,
+            self.code,
             OrganizationName::new(self.name)?,
-            self.email.map(Email::new).transpose()?,
+            self.display_name,
+            self.tax_number,
+            self.registration_no,
             self.phone.map(Phone::new).transpose()?,
+            self.email.map(Email::new).transpose()?,
             self.website.map(Url::new).transpose()?,
-            self.industry,
-            self.address,
-            self.city,
-            self.state,
-            self.postal_code,
-            self.country_code,
-            self.timezone,
-            self.currency,
-            self.is_active,
+            self.parent_id,
+            self.metadata,
             self.created_at,
             self.updated_at,
         ))
@@ -72,22 +66,19 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
     {
         sqlx::query(&format!(
             "INSERT INTO organization ({SELECT_FIELDS}) \
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)"
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"
         ))
         .bind(organization.id())
+        .bind(organization.code())
         .bind(organization.name().value())
-        .bind(organization.email().map(|e| e.to_string()))
+        .bind(organization.display_name())
+        .bind(organization.tax_number())
+        .bind(organization.registration_no())
         .bind(organization.phone().map(|p| p.to_string()))
+        .bind(organization.email().map(|e| e.to_string()))
         .bind(organization.website().map(|w| w.to_string()))
-        .bind(organization.industry())
-        .bind(organization.address())
-        .bind(organization.city())
-        .bind(organization.state())
-        .bind(organization.postal_code())
-        .bind(organization.country_code())
-        .bind(organization.timezone())
-        .bind(organization.currency())
-        .bind(organization.is_active())
+        .bind(organization.parent_id())
+        .bind(organization.metadata())
         .bind(organization.created_at())
         .bind(organization.updated_at())
         .execute(&mut *executor.acquire().await?)
@@ -102,25 +93,21 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
     {
         sqlx::query(
             "UPDATE organization SET \
-             name = $2, email = $3, phone = $4, website = $5, industry = $6, \
-             address = $7, city = $8, state = $9, postal_code = $10, country_code = $11, \
-             timezone = $12, currency = $13, is_active = $14, updated_at = $15 \
+             code = $2, name = $3, display_name = $4, tax_number = $5, registration_no = $6, \
+             phone = $7, email = $8, website = $9, parent_id = $10, metadata = $11, updated_at = $12 \
              WHERE id = $1",
         )
         .bind(organization.id())
+        .bind(organization.code())
         .bind(organization.name().value())
-        .bind(organization.email().map(|e| e.to_string()))
+        .bind(organization.display_name())
+        .bind(organization.tax_number())
+        .bind(organization.registration_no())
         .bind(organization.phone().map(|p| p.to_string()))
+        .bind(organization.email().map(|e| e.to_string()))
         .bind(organization.website().map(|w| w.to_string()))
-        .bind(organization.industry())
-        .bind(organization.address())
-        .bind(organization.city())
-        .bind(organization.state())
-        .bind(organization.postal_code())
-        .bind(organization.country_code())
-        .bind(organization.timezone())
-        .bind(organization.currency())
-        .bind(organization.is_active())
+        .bind(organization.parent_id())
+        .bind(organization.metadata())
         .bind(organization.updated_at())
         .execute(&mut *executor.acquire().await?)
         .await?;

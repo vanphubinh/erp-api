@@ -97,18 +97,7 @@ fn unique_name(prefix: &str) -> String {
 fn minimal_org() -> impl Fn(&str) -> Value {
     |name: &str| {
         json!({
-            "name": name,
-            "email": "",
-            "phone": "",
-            "website": "",
-            "industry": "",
-            "address": "",
-            "city": "",
-            "state": "",
-            "postalCode": "",
-            "countryCode": "",
-            "timezone": "",
-            "currency": ""
+            "name": name
         })
     }
 }
@@ -116,18 +105,16 @@ fn minimal_org() -> impl Fn(&str) -> Value {
 #[fixture]
 fn full_org() -> Value {
     json!({
+        "code": "ORG-001",
         "name": unique_name("FullDataCorp"),
-        "email": "contact@fulldata.com",
+        "displayName": "Full Data Corporation",
+        "taxNumber": "0123456789",
+        "registrationNo": "BRN-12345",
         "phone": "+1-555-1234",
+        "email": "contact@fulldata.com",
         "website": "https://fulldata.com",
-        "industry": "Technology",
-        "address": "123 Main St",
-        "city": "San Francisco",
-        "state": "CA",
-        "postalCode": "94105",
-        "countryCode": "US",
-        "timezone": "America/Los_Angeles",
-        "currency": "USD"
+        "parentId": null,
+        "metadata": {"industry": "Technology", "size": "Large"}
     })
 }
 

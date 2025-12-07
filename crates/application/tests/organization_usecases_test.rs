@@ -8,6 +8,7 @@ use application::organization::{
 };
 use infrastructure::repositories::OrganizationRepositoryImpl;
 use rstest::fixture;
+use serde_json::json;
 use shared::AppError;
 use sqlx::postgres::PgPoolOptions;
 
@@ -49,36 +50,32 @@ fn repo() -> OrganizationRepositoryImpl {
 #[fixture]
 fn minimal_input() -> impl Fn(&str) -> CreateOrganizationInput {
     |name: &str| CreateOrganizationInput {
+        code: String::new(),
         name: name.to_string(),
-        email: String::new(),
+        display_name: String::new(),
+        tax_number: String::new(),
+        registration_no: String::new(),
         phone: String::new(),
+        email: String::new(),
         website: String::new(),
-        industry: String::new(),
-        address: String::new(),
-        city: String::new(),
-        state: String::new(),
-        postal_code: String::new(),
-        country_code: String::new(),
-        timezone: String::new(),
-        currency: String::new(),
+        parent_id: None,
+        metadata: None,
     }
 }
 
 #[fixture]
 fn full_input() -> CreateOrganizationInput {
     CreateOrganizationInput {
+        code: "ORG-001".to_string(),
         name: unique_name("AcmeCorp"),
-        email: "contact@acme.com".to_string(),
+        display_name: "Acme Corporation".to_string(),
+        tax_number: "0123456789".to_string(),
+        registration_no: "BRN-12345".to_string(),
         phone: "+1-555-0100".to_string(),
+        email: "contact@acme.com".to_string(),
         website: "https://acme.com".to_string(),
-        industry: "Technology".to_string(),
-        address: "123 Main St".to_string(),
-        city: "San Francisco".to_string(),
-        state: "CA".to_string(),
-        postal_code: "94105".to_string(),
-        country_code: "US".to_string(),
-        timezone: "America/Los_Angeles".to_string(),
-        currency: "USD".to_string(),
+        parent_id: None,
+        metadata: Some(json!({"industry": "Technology", "size": "Large"})),
     }
 }
 
@@ -112,7 +109,8 @@ async fn create_organization_with_full_data() {
     let org = result.unwrap();
     assert!(org.name().value().starts_with("AcmeCorp_"));
     assert_eq!(&**org.email().unwrap(), "contact@acme.com");
-    assert_eq!(org.industry(), Some("Technology"));
+    assert_eq!(org.code(), Some("ORG-001"));
+    assert_eq!(org.tax_number(), Some("0123456789"));
 }
 
 #[tokio::test]

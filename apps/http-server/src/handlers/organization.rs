@@ -74,18 +74,16 @@ pub async fn create_organization(
     Json(request): Json<CreateOrganizationRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let input = application::organization::CreateOrganizationInput {
+        code: request.code,
         name: request.name,
-        email: request.email,
+        display_name: request.display_name,
+        tax_number: request.tax_number,
+        registration_no: request.registration_no,
         phone: request.phone,
+        email: request.email,
         website: request.website,
-        industry: request.industry,
-        address: request.address,
-        city: request.city,
-        state: request.state,
-        postal_code: request.postal_code,
-        country_code: request.country_code,
-        timezone: request.timezone,
-        currency: request.currency,
+        parent_id: request.parent_id,
+        metadata: request.metadata,
     };
 
     let organization = CreateOrganizationUseCase::new(OrganizationRepositoryImpl::new())

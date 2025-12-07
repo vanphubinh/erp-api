@@ -1,6 +1,7 @@
 use super::value_objects::{Email, OrganizationName, Phone, Url};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JsonValue;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -11,44 +12,35 @@ pub struct Organization {
     #[schema(example = "550e8400-e29b-41d4-a716-446655440000")]
     id: Uuid,
 
+    #[schema(example = "ORG-001")]
+    code: Option<String>,
+
     #[schema(example = "Acme Corporation")]
     name: OrganizationName,
 
-    #[schema(example = "contact@acme.com")]
-    email: Option<Email>,
+    #[schema(example = "Acme Corp")]
+    display_name: Option<String>,
+
+    #[schema(example = "0123456789")]
+    tax_number: Option<String>,
+
+    #[schema(example = "BRN-12345")]
+    registration_no: Option<String>,
 
     #[schema(example = "+1-555-0100")]
     phone: Option<Phone>,
 
+    #[schema(example = "contact@acme.com")]
+    email: Option<Email>,
+
     #[schema(example = "https://acme.com")]
     website: Option<Url>,
 
-    #[schema(example = "Technology")]
-    industry: Option<String>,
+    #[schema(example = "550e8400-e29b-41d4-a716-446655440001")]
+    parent_id: Option<Uuid>,
 
-    #[schema(example = "123 Main Street")]
-    address: Option<String>,
-
-    #[schema(example = "San Francisco")]
-    city: Option<String>,
-
-    #[schema(example = "CA")]
-    state: Option<String>,
-
-    #[schema(example = "94105")]
-    postal_code: Option<String>,
-
-    #[schema(example = "US")]
-    country_code: Option<String>,
-
-    #[schema(example = "America/Los_Angeles")]
-    timezone: Option<String>,
-
-    #[schema(example = "USD")]
-    currency: Option<String>,
-
-    #[schema(example = true)]
-    is_active: bool,
+    #[schema(example = "{}")]
+    metadata: JsonValue,
 
     #[schema(example = "2025-01-15T10:30:00Z")]
     created_at: DateTime<Utc>,
@@ -63,19 +55,16 @@ impl Organization {
         let now = Utc::now();
         Self {
             id: Uuid::now_v7(),
+            code: None,
             name,
-            email: None,
+            display_name: None,
+            tax_number: None,
+            registration_no: None,
             phone: None,
+            email: None,
             website: None,
-            industry: None,
-            address: None,
-            city: None,
-            state: None,
-            postal_code: None,
-            country_code: None,
-            timezone: None,
-            currency: None,
-            is_active: true,
+            parent_id: None,
+            metadata: JsonValue::Object(serde_json::Map::new()),
             created_at: now,
             updated_at: now,
         }
@@ -85,37 +74,31 @@ impl Organization {
     #[allow(clippy::too_many_arguments)]
     pub fn from_storage(
         id: Uuid,
+        code: Option<String>,
         name: OrganizationName,
-        email: Option<Email>,
+        display_name: Option<String>,
+        tax_number: Option<String>,
+        registration_no: Option<String>,
         phone: Option<Phone>,
+        email: Option<Email>,
         website: Option<Url>,
-        industry: Option<String>,
-        address: Option<String>,
-        city: Option<String>,
-        state: Option<String>,
-        postal_code: Option<String>,
-        country_code: Option<String>,
-        timezone: Option<String>,
-        currency: Option<String>,
-        is_active: bool,
+        parent_id: Option<Uuid>,
+        metadata: JsonValue,
         created_at: DateTime<Utc>,
         updated_at: DateTime<Utc>,
     ) -> Self {
         Self {
             id,
+            code,
             name,
-            email,
+            display_name,
+            tax_number,
+            registration_no,
             phone,
+            email,
             website,
-            industry,
-            address,
-            city,
-            state,
-            postal_code,
-            country_code,
-            timezone,
-            currency,
-            is_active,
+            parent_id,
+            metadata,
             created_at,
             updated_at,
         }
@@ -126,56 +109,44 @@ impl Organization {
         self.id
     }
 
+    pub fn code(&self) -> Option<&str> {
+        self.code.as_deref()
+    }
+
     pub fn name(&self) -> &OrganizationName {
         &self.name
     }
 
-    pub fn email(&self) -> Option<&Email> {
-        self.email.as_ref()
+    pub fn display_name(&self) -> Option<&str> {
+        self.display_name.as_deref()
+    }
+
+    pub fn tax_number(&self) -> Option<&str> {
+        self.tax_number.as_deref()
+    }
+
+    pub fn registration_no(&self) -> Option<&str> {
+        self.registration_no.as_deref()
     }
 
     pub fn phone(&self) -> Option<&Phone> {
         self.phone.as_ref()
     }
 
+    pub fn email(&self) -> Option<&Email> {
+        self.email.as_ref()
+    }
+
     pub fn website(&self) -> Option<&Url> {
         self.website.as_ref()
     }
 
-    pub fn industry(&self) -> Option<&str> {
-        self.industry.as_deref()
+    pub fn parent_id(&self) -> Option<Uuid> {
+        self.parent_id
     }
 
-    pub fn address(&self) -> Option<&str> {
-        self.address.as_deref()
-    }
-
-    pub fn city(&self) -> Option<&str> {
-        self.city.as_deref()
-    }
-
-    pub fn state(&self) -> Option<&str> {
-        self.state.as_deref()
-    }
-
-    pub fn postal_code(&self) -> Option<&str> {
-        self.postal_code.as_deref()
-    }
-
-    pub fn country_code(&self) -> Option<&str> {
-        self.country_code.as_deref()
-    }
-
-    pub fn timezone(&self) -> Option<&str> {
-        self.timezone.as_deref()
-    }
-
-    pub fn currency(&self) -> Option<&str> {
-        self.currency.as_deref()
-    }
-
-    pub fn is_active(&self) -> bool {
-        self.is_active
+    pub fn metadata(&self) -> &JsonValue {
+        &self.metadata
     }
 
     pub fn created_at(&self) -> DateTime<Utc> {
@@ -187,18 +158,18 @@ impl Organization {
     }
 
     // Business logic methods
-    pub fn activate(&mut self) {
-        self.is_active = true;
-        self.updated_at = Utc::now();
-    }
-
-    pub fn deactivate(&mut self) {
-        self.is_active = false;
-        self.updated_at = Utc::now();
-    }
-
     pub fn update_name(&mut self, name: OrganizationName) {
         self.name = name;
+        self.updated_at = Utc::now();
+    }
+
+    pub fn set_parent(&mut self, parent_id: Option<Uuid>) {
+        self.parent_id = parent_id;
+        self.updated_at = Utc::now();
+    }
+
+    pub fn update_metadata(&mut self, metadata: JsonValue) {
+        self.metadata = metadata;
         self.updated_at = Utc::now();
     }
 }
@@ -220,10 +191,12 @@ mod tests {
         let org = create_org("Test Corp");
 
         assert_eq!(org.name().value(), "Test Corp");
-        assert!(org.is_active());
+        assert!(org.code().is_none());
+        assert!(org.display_name().is_none());
         assert!(org.email().is_none());
         assert!(org.phone().is_none());
         assert!(org.website().is_none());
+        assert!(org.parent_id().is_none());
     }
 
     #[test]
@@ -245,31 +218,6 @@ mod tests {
     }
 
     #[test]
-    fn activate_sets_active_and_updates_timestamp() {
-        let mut org = create_org("Test Corp");
-        org.deactivate();
-        let before_update = org.updated_at();
-
-        std::thread::sleep(std::time::Duration::from_millis(1));
-        org.activate();
-
-        assert!(org.is_active());
-        assert!(org.updated_at() > before_update);
-    }
-
-    #[test]
-    fn deactivate_sets_inactive_and_updates_timestamp() {
-        let mut org = create_org("Test Corp");
-        let before_update = org.updated_at();
-
-        std::thread::sleep(std::time::Duration::from_millis(1));
-        org.deactivate();
-
-        assert!(!org.is_active());
-        assert!(org.updated_at() > before_update);
-    }
-
-    #[test]
     fn update_name_changes_name_and_timestamp() {
         let mut org = create_org("Old Name");
         let before_update = org.updated_at();
@@ -279,5 +227,15 @@ mod tests {
 
         assert_eq!(org.name().value(), "New Name");
         assert!(org.updated_at() > before_update);
+    }
+
+    #[test]
+    fn set_parent_updates_parent_id() {
+        let mut org = create_org("Child Corp");
+        let parent_id = Uuid::now_v7();
+
+        org.set_parent(Some(parent_id));
+
+        assert_eq!(org.parent_id(), Some(parent_id));
     }
 }

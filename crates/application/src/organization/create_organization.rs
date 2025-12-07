@@ -1,25 +1,25 @@
 use crate::ports::OrganizationRepository;
 use domain::organization::Organization;
 use domain::organization::value_objects::{Email, OrganizationName, Phone, Url};
+use serde_json::Value as JsonValue;
 use shared::AppError;
+use uuid::Uuid;
 
 pub struct CreateOrganizationUseCase<R> {
     repository: R,
 }
 
 pub struct CreateOrganizationInput {
+    pub code: String,
     pub name: String,
-    pub email: String,
+    pub display_name: String,
+    pub tax_number: String,
+    pub registration_no: String,
     pub phone: String,
+    pub email: String,
     pub website: String,
-    pub industry: String,
-    pub address: String,
-    pub city: String,
-    pub state: String,
-    pub postal_code: String,
-    pub country_code: String,
-    pub timezone: String,
-    pub currency: String,
+    pub parent_id: Option<Uuid>,
+    pub metadata: Option<JsonValue>,
 }
 
 impl<R: OrganizationRepository> CreateOrganizationUseCase<R> {
@@ -68,26 +68,25 @@ impl<R: OrganizationRepository> CreateOrganizationUseCase<R> {
         };
 
         // Create organization entity
-        let organization = Organization::new(name);
+        let org = Organization::new(name);
 
         // Apply optional fields through reconstruction
         let organization = Organization::from_storage(
-            organization.id(),
-            organization.name().clone(),
-            email,
+            org.id(),
+            to_option(input.code),
+            org.name().clone(),
+            to_option(input.display_name),
+            to_option(input.tax_number),
+            to_option(input.registration_no),
             phone,
+            email,
             website,
-            to_option(input.industry),
-            to_option(input.address),
-            to_option(input.city),
-            to_option(input.state),
-            to_option(input.postal_code),
-            to_option(input.country_code),
-            to_option(input.timezone),
-            to_option(input.currency),
-            true, // is_active
-            organization.created_at(),
-            organization.updated_at(),
+            input.parent_id,
+            input
+                .metadata
+                .unwrap_or_else(|| JsonValue::Object(serde_json::Map::new())),
+            org.created_at(),
+            org.updated_at(),
         );
 
         // Persist to database

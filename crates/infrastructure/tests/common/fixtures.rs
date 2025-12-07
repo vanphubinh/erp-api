@@ -3,13 +3,13 @@ use domain::organization::{Email, Organization, OrganizationName, Phone, Url};
 use fake::{
     Fake,
     faker::{
-        address::en::{CityName, CountryCode, StateAbbr, StreetName, ZipCode},
-        company::en::{CompanyName, Industry},
+        company::en::CompanyName,
         internet::en::{SafeEmail, Username},
         phone_number::en::PhoneNumber,
     },
 };
 use infrastructure::repositories::OrganizationRepositoryImpl;
+use serde_json::json;
 use sqlx::PgPool;
 
 // ============================================================================
@@ -41,9 +41,13 @@ pub fn fake_org_full() -> Organization {
 
     Organization::from_storage(
         base.id(),
+        Some(format!("ORG-{}", uuid::Uuid::now_v7().to_string()[..8].to_uppercase())),
         OrganizationName::new(base.name().value()).unwrap(),
-        Some(Email::new(SafeEmail().fake::<String>()).unwrap()),
+        Some(format!("{} Display", base.name().value())),
+        Some("0123456789".to_string()),
+        Some("BRN-12345".to_string()),
         Some(Phone::new(PhoneNumber().fake::<String>()).unwrap()),
+        Some(Email::new(SafeEmail().fake::<String>()).unwrap()),
         Some(
             Url::new(format!(
                 "https://{}.com",
@@ -51,15 +55,8 @@ pub fn fake_org_full() -> Organization {
             ))
             .unwrap(),
         ),
-        Some(Industry().fake()),
-        Some(StreetName().fake()),
-        Some(CityName().fake()),
-        Some(StateAbbr().fake()),
-        Some(ZipCode().fake()),
-        Some(CountryCode().fake()),
-        Some("America/New_York".into()),
-        Some("USD".into()),
-        base.is_active(),
+        None, // parent_id
+        json!({"industry": "Technology", "size": "Medium"}),
         base.created_at(),
         base.updated_at(),
     )
