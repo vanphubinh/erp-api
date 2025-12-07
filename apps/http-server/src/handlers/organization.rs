@@ -83,7 +83,6 @@ pub async fn create_organization(
         email: request.email,
         website: request.website,
         parent_id: request.parent_id,
-        metadata: request.metadata,
     };
 
     let organization = CreateOrganizationUseCase::new(OrganizationRepositoryImpl::new())

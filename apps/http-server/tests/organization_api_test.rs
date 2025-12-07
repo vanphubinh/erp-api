@@ -105,7 +105,7 @@ fn minimal_org() -> impl Fn(&str) -> Value {
 #[fixture]
 fn full_org() -> Value {
     json!({
-        "code": "ORG-001",
+        "code": unique_name("ORG"),
         "name": unique_name("FullDataCorp"),
         "displayName": "Full Data Corporation",
         "taxNumber": "0123456789",
@@ -113,8 +113,7 @@ fn full_org() -> Value {
         "phone": "+1-555-1234",
         "email": "contact@fulldata.com",
         "website": "https://fulldata.com",
-        "parentId": null,
-        "metadata": {"industry": "Technology", "size": "Large"}
+        "parentId": null
     })
 }
 
@@ -143,8 +142,11 @@ async fn create_organization_with_full_data() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let (status, _) = post_json(&app, "/api/organizations/create", &full_org()).await;
+    let (status, body) = post_json(&app, "/api/organizations/create", &full_org()).await;
 
+    if status != StatusCode::CREATED {
+        eprintln!("Error response: {:?}", body);
+    }
     assert_eq!(status, StatusCode::CREATED);
 }
 

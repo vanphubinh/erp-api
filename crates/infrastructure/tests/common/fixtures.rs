@@ -9,7 +9,6 @@ use fake::{
     },
 };
 use infrastructure::repositories::OrganizationRepositoryImpl;
-use serde_json::json;
 use sqlx::PgPool;
 
 // ============================================================================
@@ -56,7 +55,6 @@ pub fn fake_org_full() -> Organization {
             .unwrap(),
         ),
         None, // parent_id
-        json!({"industry": "Technology", "size": "Medium"}),
         base.created_at(),
         base.updated_at(),
     )

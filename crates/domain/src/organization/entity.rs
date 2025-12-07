@@ -1,7 +1,6 @@
 use super::value_objects::{Email, OrganizationName, Phone, Url};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value as JsonValue;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -39,9 +38,6 @@ pub struct Organization {
     #[schema(example = "550e8400-e29b-41d4-a716-446655440001")]
     parent_id: Option<Uuid>,
 
-    #[schema(example = "{}")]
-    metadata: JsonValue,
-
     #[schema(example = "2025-01-15T10:30:00Z")]
     created_at: DateTime<Utc>,
 
@@ -64,7 +60,6 @@ impl Organization {
             email: None,
             website: None,
             parent_id: None,
-            metadata: JsonValue::Object(serde_json::Map::new()),
             created_at: now,
             updated_at: now,
         }
@@ -83,7 +78,6 @@ impl Organization {
         email: Option<Email>,
         website: Option<Url>,
         parent_id: Option<Uuid>,
-        metadata: JsonValue,
         created_at: DateTime<Utc>,
         updated_at: DateTime<Utc>,
     ) -> Self {
@@ -98,7 +92,6 @@ impl Organization {
             email,
             website,
             parent_id,
-            metadata,
             created_at,
             updated_at,
         }
@@ -145,10 +138,6 @@ impl Organization {
         self.parent_id
     }
 
-    pub fn metadata(&self) -> &JsonValue {
-        &self.metadata
-    }
-
     pub fn created_at(&self) -> DateTime<Utc> {
         self.created_at
     }
@@ -165,11 +154,6 @@ impl Organization {
 
     pub fn set_parent(&mut self, parent_id: Option<Uuid>) {
         self.parent_id = parent_id;
-        self.updated_at = Utc::now();
-    }
-
-    pub fn update_metadata(&mut self, metadata: JsonValue) {
-        self.metadata = metadata;
         self.updated_at = Utc::now();
     }
 }

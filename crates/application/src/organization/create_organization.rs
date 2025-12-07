@@ -1,7 +1,6 @@
 use crate::ports::OrganizationRepository;
 use domain::organization::Organization;
 use domain::organization::value_objects::{Email, OrganizationName, Phone, Url};
-use serde_json::Value as JsonValue;
 use shared::AppError;
 use uuid::Uuid;
 
@@ -19,7 +18,6 @@ pub struct CreateOrganizationInput {
     pub email: String,
     pub website: String,
     pub parent_id: Option<Uuid>,
-    pub metadata: Option<JsonValue>,
 }
 
 impl<R: OrganizationRepository> CreateOrganizationUseCase<R> {
@@ -82,9 +80,6 @@ impl<R: OrganizationRepository> CreateOrganizationUseCase<R> {
             email,
             website,
             input.parent_id,
-            input
-                .metadata
-                .unwrap_or_else(|| JsonValue::Object(serde_json::Map::new())),
             org.created_at(),
             org.updated_at(),
         );

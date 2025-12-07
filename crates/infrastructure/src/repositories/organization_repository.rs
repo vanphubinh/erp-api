@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use domain::organization::value_objects::{Email, Phone, Url};
 use domain::organization::{Organization, OrganizationName};
-use serde_json::Value as JsonValue;
 use shared::{AppError, PaginationMeta};
 use uuid::Uuid;
 
@@ -18,7 +17,7 @@ impl OrganizationRepositoryImpl {
 
 // SQL field list constant
 const SELECT_FIELDS: &str = "id, code, name, display_name, tax_number, registration_no, \
-                             phone, email, website, parent_id, metadata, created_at, updated_at";
+                             phone, email, website, parent_id, created_at, updated_at";
 
 // Private row struct for database deserialization
 #[derive(sqlx::FromRow)]
@@ -33,7 +32,6 @@ struct OrganizationRow {
     email: Option<String>,
     website: Option<String>,
     parent_id: Option<Uuid>,
-    metadata: JsonValue,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
 }
@@ -51,7 +49,6 @@ impl OrganizationRow {
             self.email.map(Email::new).transpose()?,
             self.website.map(Url::new).transpose()?,
             self.parent_id,
-            self.metadata,
             self.created_at,
             self.updated_at,
         ))
@@ -66,7 +63,7 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
     {
         sqlx::query(&format!(
             "INSERT INTO organization ({SELECT_FIELDS}) \
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
         ))
         .bind(organization.id())
         .bind(organization.code())
@@ -78,7 +75,6 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
         .bind(organization.email().map(|e| e.to_string()))
         .bind(organization.website().map(|w| w.to_string()))
         .bind(organization.parent_id())
-        .bind(organization.metadata())
         .bind(organization.created_at())
         .bind(organization.updated_at())
         .execute(&mut *executor.acquire().await?)
@@ -94,7 +90,7 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
         sqlx::query(
             "UPDATE organization SET \
              code = $2, name = $3, display_name = $4, tax_number = $5, registration_no = $6, \
-             phone = $7, email = $8, website = $9, parent_id = $10, metadata = $11, updated_at = $12 \
+             phone = $7, email = $8, website = $9, parent_id = $10, updated_at = $11 \
              WHERE id = $1",
         )
         .bind(organization.id())
@@ -107,7 +103,6 @@ impl OrganizationRepository for OrganizationRepositoryImpl {
         .bind(organization.email().map(|e| e.to_string()))
         .bind(organization.website().map(|w| w.to_string()))
         .bind(organization.parent_id())
-        .bind(organization.metadata())
         .bind(organization.updated_at())
         .execute(&mut *executor.acquire().await?)
         .await?;

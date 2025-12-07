@@ -8,7 +8,6 @@ use application::organization::{
 };
 use infrastructure::repositories::OrganizationRepositoryImpl;
 use rstest::fixture;
-use serde_json::json;
 use shared::AppError;
 use sqlx::postgres::PgPoolOptions;
 
@@ -59,14 +58,13 @@ fn minimal_input() -> impl Fn(&str) -> CreateOrganizationInput {
         email: String::new(),
         website: String::new(),
         parent_id: None,
-        metadata: None,
     }
 }
 
 #[fixture]
 fn full_input() -> CreateOrganizationInput {
     CreateOrganizationInput {
-        code: "ORG-001".to_string(),
+        code: unique_name("ORG"),
         name: unique_name("AcmeCorp"),
         display_name: "Acme Corporation".to_string(),
         tax_number: "0123456789".to_string(),
@@ -75,7 +73,6 @@ fn full_input() -> CreateOrganizationInput {
         email: "contact@acme.com".to_string(),
         website: "https://acme.com".to_string(),
         parent_id: None,
-        metadata: Some(json!({"industry": "Technology", "size": "Large"})),
     }
 }
 
@@ -105,11 +102,14 @@ async fn create_organization_with_full_data() {
 
     let result = use_case.execute(&pool, full_input()).await;
 
-    assert!(result.is_ok());
+    if let Err(ref e) = result {
+        eprintln!("Error creating organization: {:?}", e);
+    }
+    assert!(result.is_ok(), "Failed: {:?}", result.err());
     let org = result.unwrap();
     assert!(org.name().value().starts_with("AcmeCorp_"));
     assert_eq!(&**org.email().unwrap(), "contact@acme.com");
-    assert_eq!(org.code(), Some("ORG-001"));
+    assert!(org.code().unwrap().starts_with("ORG_"));
     assert_eq!(org.tax_number(), Some("0123456789"));
 }
 
@@ -236,7 +236,9 @@ async fn create_organization_accepts_empty_optional_fields() {
     let use_case = CreateOrganizationUseCase::new(repo());
 
     // All optional fields empty - should succeed
-    let result = use_case.execute(&pool, minimal_input()(&unique_name("EmptyOptionals"))).await;
+    let result = use_case
+        .execute(&pool, minimal_input()(&unique_name("EmptyOptionals")))
+        .await;
 
     assert!(result.is_ok());
     let org = result.unwrap();

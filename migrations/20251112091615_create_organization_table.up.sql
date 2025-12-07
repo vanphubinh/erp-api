@@ -1,9 +1,6 @@
--- Enable UUID v7 extension
-CREATE EXTENSION IF NOT EXISTS pg_uuidv7;
-
 -- Create organization table
 CREATE TABLE organization (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id              UUID PRIMARY KEY,
     code            TEXT UNIQUE,
     name            TEXT NOT NULL,
     display_name    TEXT,
@@ -13,7 +10,6 @@ CREATE TABLE organization (
     email           TEXT,
     website         TEXT,
     parent_id       UUID REFERENCES organization(id),
-    metadata        JSONB DEFAULT '{}',
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -35,6 +31,5 @@ COMMENT ON COLUMN organization.phone IS 'Primary phone number';
 COMMENT ON COLUMN organization.email IS 'Primary email';
 COMMENT ON COLUMN organization.website IS 'Company website URL';
 COMMENT ON COLUMN organization.parent_id IS 'Parent organization for hierarchy (sub-companies)';
-COMMENT ON COLUMN organization.metadata IS 'Flexible metadata (JSON)';
 COMMENT ON COLUMN organization.created_at IS 'Creation timestamp';
 COMMENT ON COLUMN organization.updated_at IS 'Last update timestamp';
