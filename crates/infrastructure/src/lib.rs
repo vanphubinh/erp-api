@@ -1,5 +1,5 @@
 pub mod repositories {
-    pub mod organization_repository;
+    pub mod party_repository;
 
-    pub use organization_repository::*;
+    pub use party_repository::*;
 }

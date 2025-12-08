@@ -1,4 +1,4 @@
-//! API integration tests for Organization endpoints
+//! API integration tests for Party endpoints
 //!
 //! Uses a shared test database with #[tokio::test].
 
@@ -94,42 +94,39 @@ fn unique_name(prefix: &str) -> String {
 // =============================================================================
 
 #[fixture]
-fn minimal_org() -> impl Fn(&str) -> Value {
+fn minimal_party() -> impl Fn(&str) -> Value {
     |name: &str| {
         json!({
-            "name": name
+            "partyType": "company",
+            "displayName": name
         })
     }
 }
 
 #[fixture]
-fn full_org() -> Value {
+fn full_party() -> Value {
     json!({
-        "code": unique_name("ORG"),
-        "name": unique_name("FullDataCorp"),
-        "displayName": "Full Data Corporation",
-        "taxNumber": "0123456789",
-        "registrationNo": "BRN-12345",
-        "phone": "+1-555-1234",
-        "email": "contact@fulldata.com",
-        "website": "https://fulldata.com",
-        "parentId": null
+        "partyType": "company",
+        "displayName": unique_name("FullDataCorp"),
+        "legalName": "Full Data Corporation Ltd.",
+        "tin": "0123456789",
+        "registrationNumber": "BRN-12345"
     })
 }
 
 // =============================================================================
-// POST /api/organizations/create
+// POST /api/parties/create
 // =============================================================================
 
 #[tokio::test]
-async fn create_organization_success() {
+async fn create_party_success() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
     let (status, body) = post_json(
         &app,
-        "/api/organizations/create",
-        &minimal_org()(&unique_name("CreateTest")),
+        "/api/parties/create",
+        &minimal_party()(&unique_name("CreateTest")),
     )
     .await;
 
@@ -138,11 +135,11 @@ async fn create_organization_success() {
 }
 
 #[tokio::test]
-async fn create_organization_with_full_data() {
+async fn create_party_with_full_data() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let (status, body) = post_json(&app, "/api/organizations/create", &full_org()).await;
+    let (status, body) = post_json(&app, "/api/parties/create", &full_party()).await;
 
     if status != StatusCode::CREATED {
         eprintln!("Error response: {:?}", body);
@@ -151,58 +148,60 @@ async fn create_organization_with_full_data() {
 }
 
 #[tokio::test]
-async fn create_organization_fails_with_empty_name() {
+async fn create_party_fails_with_empty_display_name() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let (status, _) = post_json(&app, "/api/organizations/create", &minimal_org()("")).await;
+    let (status, _) = post_json(&app, "/api/parties/create", &minimal_party()("")).await;
 
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]
-async fn create_organization_fails_with_invalid_email() {
+async fn create_party_fails_with_invalid_party_type() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let mut payload = minimal_org()(&unique_name("InvalidEmail"));
-    payload["email"] = json!("not-an-email");
+    let payload = json!({
+        "partyType": "invalid",
+        "displayName": unique_name("InvalidType")
+    });
 
-    let (status, _) = post_json(&app, "/api/organizations/create", &payload).await;
+    let (status, _) = post_json(&app, "/api/parties/create", &payload).await;
 
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
 // =============================================================================
-// GET /api/organizations/get/:id
+// GET /api/parties/get/:id
 // =============================================================================
 
 #[tokio::test]
-async fn get_organization_success() {
+async fn get_party_success() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
     // Create first
     let name = unique_name("GetTest");
     let (_, create_body) =
-        post_json(&app, "/api/organizations/create", &minimal_org()(&name)).await;
+        post_json(&app, "/api/parties/create", &minimal_party()(&name)).await;
     let id = create_body["data"]["id"].as_str().unwrap();
 
     // Get
-    let (status, body) = get_json(&app, &format!("/api/organizations/get/{}", id)).await;
+    let (status, body) = get_json(&app, &format!("/api/parties/get/{}", id)).await;
 
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(body["data"]["name"], name);
+    assert_eq!(body["data"]["displayName"], name);
 }
 
 #[tokio::test]
-async fn get_organization_not_found() {
+async fn get_party_not_found() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
     let (status, _) = get_json(
         &app,
-        &format!("/api/organizations/get/{}", uuid::Uuid::now_v7()),
+        &format!("/api/parties/get/{}", uuid::Uuid::now_v7()),
     )
     .await;
 
@@ -210,23 +209,23 @@ async fn get_organization_not_found() {
 }
 
 // =============================================================================
-// GET /api/organizations/list
+// GET /api/parties/list
 // =============================================================================
 
 #[tokio::test]
-async fn list_organizations_returns_data() {
+async fn list_parties_returns_data() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
     // Create one
     post_json(
         &app,
-        "/api/organizations/create",
-        &minimal_org()(&unique_name("ListTest")),
+        "/api/parties/create",
+        &minimal_party()(&unique_name("ListTest")),
     )
     .await;
 
-    let (status, body) = get_json(&app, "/api/organizations/list").await;
+    let (status, body) = get_json(&app, "/api/parties/list").await;
 
     assert_eq!(status, StatusCode::OK);
     assert!(body["data"].is_array());
@@ -235,11 +234,11 @@ async fn list_organizations_returns_data() {
 }
 
 #[tokio::test]
-async fn list_organizations_pagination() {
+async fn list_parties_pagination() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let (status, body) = get_json(&app, "/api/organizations/list?page=1&page-size=5").await;
+    let (status, body) = get_json(&app, "/api/parties/list?page=1&page-size=5").await;
 
     assert_eq!(status, StatusCode::OK);
     assert!(body["data"].is_array());
@@ -252,35 +251,38 @@ async fn list_organizations_pagination() {
 // =============================================================================
 
 #[tokio::test]
-async fn create_organization_fails_with_invalid_website() {
-    let pool = get_test_pool().await;
-    let app = app(pool);
-
-    let mut payload = minimal_org()(&unique_name("InvalidWebsite"));
-    payload["website"] = json!("not-a-url");
-
-    let (status, _) = post_json(&app, "/api/organizations/create", &payload).await;
-
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-}
-
-#[tokio::test]
-async fn create_organization_fails_with_name_too_long() {
+async fn create_party_fails_with_display_name_too_long() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
     let long_name = "a".repeat(256);
-    let (status, _) = post_json(&app, "/api/organizations/create", &minimal_org()(&long_name)).await;
+    let (status, _) = post_json(&app, "/api/parties/create", &minimal_party()(&long_name)).await;
 
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
 #[tokio::test]
-async fn get_organization_fails_with_invalid_uuid() {
+async fn get_party_fails_with_invalid_uuid() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let (status, _) = get_json(&app, "/api/organizations/get/not-a-uuid").await;
+    let (status, _) = get_json(&app, "/api/parties/get/not-a-uuid").await;
 
     assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn create_person_party() {
+    let pool = get_test_pool().await;
+    let app = app(pool);
+
+    let payload = json!({
+        "partyType": "person",
+        "displayName": unique_name("PersonTest")
+    });
+
+    let (status, body) = post_json(&app, "/api/parties/create", &payload).await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    assert!(body["data"]["id"].is_string());
 }

@@ -3,7 +3,7 @@ pub mod fixtures;
 use sqlx::postgres::PgPoolOptions;
 
 // Re-export all repository implementations for easy access in tests
-pub use infrastructure::repositories::OrganizationRepositoryImpl;
+pub use infrastructure::repositories::PartyRepositoryImpl;
 
 /// Get shared test database pool
 pub async fn get_test_pool() -> sqlx::PgPool {

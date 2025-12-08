@@ -1,4 +1,4 @@
-pub mod organization {
+pub mod party {
     pub mod entity;
     pub mod value_objects;
 

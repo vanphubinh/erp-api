@@ -1,4 +1,4 @@
-pub mod organization;
+pub mod party;
 
-pub use organization::*;
+pub use party::*;
 

@@ -1,14 +1,10 @@
-use application::ports::OrganizationRepository;
-use domain::organization::{Email, Organization, OrganizationName, Phone, Url};
+use application::ports::PartyRepository;
+use domain::party::{DisplayName, LegalName, Party, PartyType, RegistrationNumber, Tin};
 use fake::{
     Fake,
-    faker::{
-        company::en::CompanyName,
-        internet::en::{SafeEmail, Username},
-        phone_number::en::PhoneNumber,
-    },
+    faker::company::en::CompanyName,
 };
-use infrastructure::repositories::OrganizationRepositoryImpl;
+use infrastructure::repositories::PartyRepositoryImpl;
 use sqlx::PgPool;
 
 // ============================================================================
@@ -21,40 +17,31 @@ pub fn unique_name(prefix: &str) -> String {
 }
 
 // ============================================================================
-// Organization Factories
+// Party Factories
 // ============================================================================
 
-/// Create organization with specific name
-pub fn org(name: &str) -> Organization {
-    Organization::new(OrganizationName::new(name).unwrap())
+/// Create party with specific name
+pub fn party(name: &str) -> Party {
+    Party::new(PartyType::Company, DisplayName::new(name).unwrap())
 }
 
-/// Create organization with unique fake company name
-pub fn fake_org() -> Organization {
-    org(&unique_name(&CompanyName().fake::<String>()))
+/// Create party with unique fake company name
+pub fn fake_party() -> Party {
+    party(&unique_name(&CompanyName().fake::<String>()))
 }
 
-/// Create organization with all fields populated
-pub fn fake_org_full() -> Organization {
-    let base = fake_org();
+/// Create party with all fields populated
+pub fn fake_party_full() -> Party {
+    let base = fake_party();
 
-    Organization::from_storage(
+    Party::from_storage(
         base.id(),
-        Some(format!("ORG-{}", uuid::Uuid::now_v7().to_string()[..8].to_uppercase())),
-        OrganizationName::new(base.name().value()).unwrap(),
-        Some(format!("{} Display", base.name().value())),
-        Some("0123456789".to_string()),
-        Some("BRN-12345".to_string()),
-        Some(Phone::new(PhoneNumber().fake::<String>()).unwrap()),
-        Some(Email::new(SafeEmail().fake::<String>()).unwrap()),
-        Some(
-            Url::new(format!(
-                "https://{}.com",
-                Username().fake::<String>().to_lowercase()
-            ))
-            .unwrap(),
-        ),
-        None, // parent_id
+        PartyType::Company,
+        DisplayName::new(base.display_name().value()).unwrap(),
+        Some(LegalName::new(format!("{} Ltd.", base.display_name().value())).unwrap()),
+        Some(Tin::new("0123456789").unwrap()),
+        Some(RegistrationNumber::new("BRN-12345").unwrap()),
+        true,
         base.created_at(),
         base.updated_at(),
     )
@@ -64,36 +51,36 @@ pub fn fake_org_full() -> Organization {
 // Seeding Helpers
 // ============================================================================
 
-/// Seed n fake organizations, returns them for assertions
+/// Seed n fake parties, returns them for assertions
 pub async fn seed_n(
     pool: &PgPool,
-    repo: &OrganizationRepositoryImpl,
+    repo: &PartyRepositoryImpl,
     n: usize,
-) -> Vec<Organization> {
-    let mut orgs = Vec::with_capacity(n);
+) -> Vec<Party> {
+    let mut parties = Vec::with_capacity(n);
     for _ in 0..n {
-        let o = fake_org();
-        repo.create(pool, &o).await.expect("Failed to seed");
-        orgs.push(o);
+        let p = fake_party();
+        repo.create(pool, &p).await.expect("Failed to seed");
+        parties.push(p);
     }
-    orgs
+    parties
 }
 
-/// Seed a single organization and return it
-pub async fn seed_one(pool: &PgPool, repo: &OrganizationRepositoryImpl) -> Organization {
-    let o = fake_org();
-    repo.create(pool, &o).await.expect("Failed to seed");
-    o
+/// Seed a single party and return it
+pub async fn seed_one(pool: &PgPool, repo: &PartyRepositoryImpl) -> Party {
+    let p = fake_party();
+    repo.create(pool, &p).await.expect("Failed to seed");
+    p
 }
 
-/// Seed predefined organizations with unique names
+/// Seed predefined parties with unique names
 pub async fn seed_known(
     pool: &PgPool,
-    repo: &OrganizationRepositoryImpl,
-) -> (Organization, Organization, Organization) {
-    let acme = org(&unique_name("Acme"));
-    let wayne = org(&unique_name("Wayne"));
-    let stark = org(&unique_name("Stark"));
+    repo: &PartyRepositoryImpl,
+) -> (Party, Party, Party) {
+    let acme = party(&unique_name("Acme"));
+    let wayne = party(&unique_name("Wayne"));
+    let stark = party(&unique_name("Stark"));
 
     repo.create(pool, &acme).await.unwrap();
     repo.create(pool, &wayne).await.unwrap();

@@ -1,42 +1,42 @@
 use async_trait::async_trait;
-use domain::organization::Organization;
+use domain::party::Party;
 use shared::{AppError, PaginationMeta};
 use uuid::Uuid;
 
-/// Port (interface) for organization persistence
+/// Port (interface) for party persistence
 #[async_trait]
-pub trait OrganizationRepository: Send + Sync {
-    /// Create a new organization (INSERT)
-    async fn create<'a, E>(&self, executor: E, organization: &Organization) -> Result<(), AppError>
+pub trait PartyRepository: Send + Sync {
+    /// Create a new party (INSERT)
+    async fn create<'a, E>(&self, executor: E, party: &Party) -> Result<(), AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send;
 
-    /// Update existing organization
-    async fn update<'a, E>(&self, executor: E, organization: &Organization) -> Result<(), AppError>
+    /// Update existing party
+    async fn update<'a, E>(&self, executor: E, party: &Party) -> Result<(), AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send;
 
-    /// Find organization by ID
+    /// Find party by ID
     async fn find_by_id<'a, E>(
         &self,
         executor: E,
         id: Uuid,
-    ) -> Result<Option<Organization>, AppError>
+    ) -> Result<Option<Party>, AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send;
 
-    /// Find organizations with offset-based pagination
+    /// Find parties with offset-based pagination
     /// Returns (items, pagination_meta)
     async fn find_paginated<'a, E>(
         &self,
         executor: E,
         page: u32,
         page_size: u32,
-    ) -> Result<(Vec<Organization>, PaginationMeta), AppError>
+    ) -> Result<(Vec<Party>, PaginationMeta), AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send;
 
-    /// Delete organization by ID
+    /// Delete party by ID
     async fn delete<'a, E>(&self, executor: E, id: Uuid) -> Result<(), AppError>
     where
         E: sqlx::Acquire<'a, Database = sqlx::Postgres> + Send;

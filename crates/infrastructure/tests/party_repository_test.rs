@@ -1,16 +1,16 @@
-//! Repository tests for Organization
+//! Repository tests for Party
 //!
 //! Uses shared test database with #[tokio::test].
 
 mod common;
 
-use application::ports::OrganizationRepository;
+use application::ports::PartyRepository;
 use common::{
-    OrganizationRepositoryImpl,
-    fixtures::{fake_org, fake_org_full, seed_known, seed_n, seed_one},
+    PartyRepositoryImpl,
+    fixtures::{fake_party, fake_party_full, seed_known, seed_n, seed_one},
     get_test_pool,
 };
-use domain::organization::OrganizationName;
+use domain::party::DisplayName;
 
 // ============================================================================
 // CRUD Tests
@@ -19,38 +19,37 @@ use domain::organization::OrganizationName;
 #[tokio::test]
 async fn create_and_find() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
-    let org = fake_org();
-    repo.create(&pool, &org).await.unwrap();
+    let party = fake_party();
+    repo.create(&pool, &party).await.unwrap();
 
-    let found = repo.find_by_id(&pool, org.id()).await.unwrap().unwrap();
+    let found = repo.find_by_id(&pool, party.id()).await.unwrap().unwrap();
 
-    assert_eq!(found.id(), org.id());
-    assert_eq!(found.name().value(), org.name().value());
+    assert_eq!(found.id(), party.id());
+    assert_eq!(found.display_name().value(), party.display_name().value());
 }
 
 #[tokio::test]
 async fn create_with_all_fields() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
-    let org = fake_org_full();
-    repo.create(&pool, &org).await.unwrap();
+    let party = fake_party_full();
+    repo.create(&pool, &party).await.unwrap();
 
-    let found = repo.find_by_id(&pool, org.id()).await.unwrap().unwrap();
+    let found = repo.find_by_id(&pool, party.id()).await.unwrap().unwrap();
 
-    assert!(found.email().is_some());
-    assert!(found.phone().is_some());
-    assert!(found.website().is_some());
-    assert!(found.code().is_some());
-    assert!(found.display_name().is_some());
+    assert!(found.legal_name().is_some());
+    assert!(found.tin().is_some());
+    assert!(found.registration_number().is_some());
+    assert!(found.is_active());
 }
 
 #[tokio::test]
 async fn find_nonexistent_returns_none() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
     let result = repo.find_by_id(&pool, uuid::Uuid::now_v7()).await.unwrap();
 
@@ -58,30 +57,30 @@ async fn find_nonexistent_returns_none() {
 }
 
 #[tokio::test]
-async fn update_organization() {
+async fn update_party() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
-    let mut org = seed_one(&pool, &repo).await;
+    let mut party = seed_one(&pool, &repo).await;
     let new_name = format!("Updated_{}", uuid::Uuid::now_v7());
 
-    org.update_name(OrganizationName::new(&new_name).unwrap());
-    repo.update(&pool, &org).await.unwrap();
+    party.update_display_name(DisplayName::new(&new_name).unwrap());
+    repo.update(&pool, &party).await.unwrap();
 
-    let found = repo.find_by_id(&pool, org.id()).await.unwrap().unwrap();
-    assert_eq!(found.name().value(), new_name);
+    let found = repo.find_by_id(&pool, party.id()).await.unwrap().unwrap();
+    assert_eq!(found.display_name().value(), new_name);
 }
 
 #[tokio::test]
-async fn delete_organization() {
+async fn delete_party() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
-    let org = seed_one(&pool, &repo).await;
+    let party = seed_one(&pool, &repo).await;
 
-    repo.delete(&pool, org.id()).await.unwrap();
+    repo.delete(&pool, party.id()).await.unwrap();
 
-    let found = repo.find_by_id(&pool, org.id()).await.unwrap();
+    let found = repo.find_by_id(&pool, party.id()).await.unwrap();
     assert!(found.is_none());
 }
 
@@ -90,22 +89,22 @@ async fn delete_organization() {
 // ============================================================================
 
 #[tokio::test]
-async fn find_seeded_organizations() {
+async fn find_seeded_parties() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
     let (acme, wayne, stark) = seed_known(&pool, &repo).await;
 
-    for org in [&acme, &wayne, &stark] {
-        let found = repo.find_by_id(&pool, org.id()).await.unwrap().unwrap();
-        assert_eq!(found.name().value(), org.name().value());
+    for party in [&acme, &wayne, &stark] {
+        let found = repo.find_by_id(&pool, party.id()).await.unwrap().unwrap();
+        assert_eq!(found.display_name().value(), party.display_name().value());
     }
 }
 
 #[tokio::test]
 async fn pagination_basic() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
     seed_n(&pool, &repo, 15).await;
 
@@ -120,7 +119,7 @@ async fn pagination_basic() {
 #[tokio::test]
 async fn pagination_page_size() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
     let (items, _) = repo.find_paginated(&pool, 1, 5).await.unwrap();
 
@@ -134,7 +133,7 @@ async fn pagination_page_size() {
 #[tokio::test]
 async fn delete_nonexistent_succeeds_silently() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
     // Deleting non-existent ID should not error (idempotent)
     let result = repo.delete(&pool, uuid::Uuid::now_v7()).await;
@@ -144,20 +143,20 @@ async fn delete_nonexistent_succeeds_silently() {
 #[tokio::test]
 async fn update_nonexistent_succeeds_silently() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
-    // Create org but don't persist it
-    let org = fake_org();
+    // Create party but don't persist it
+    let party = fake_party();
 
     // Update should succeed (affected 0 rows is not an error)
-    let result = repo.update(&pool, &org).await;
+    let result = repo.update(&pool, &party).await;
     assert!(result.is_ok());
 }
 
 #[tokio::test]
 async fn pagination_empty_result() {
     let pool = get_test_pool().await;
-    let repo = OrganizationRepositoryImpl::new();
+    let repo = PartyRepositoryImpl::new();
 
     // Request page far beyond data
     let (items, meta) = repo.find_paginated(&pool, 9999, 10).await.unwrap();

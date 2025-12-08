@@ -1,55 +1,55 @@
 use crate::app_state::AppState;
-use crate::dto::{CreateOrganizationRequest, CreateOrganizationResponse};
-use application::organization::{
-    CreateOrganizationUseCase, GetOrganizationUseCase, ListOrganizationsUseCase,
+use crate::dto::{CreatePartyRequest, CreatePartyResponse};
+use application::party::{
+    CreatePartyUseCase, GetPartyUseCase, ListPartiesUseCase,
 };
 use axum::{Json, extract::Path, extract::Query, extract::State, response::IntoResponse};
-use domain::organization::Organization;
-use infrastructure::repositories::OrganizationRepositoryImpl;
+use domain::party::Party;
+use infrastructure::repositories::PartyRepositoryImpl;
 use shared::{AppError, PageParams, SuccessResponse, created, success, success_with_pagination};
 use std::sync::Arc;
 use uuid::Uuid;
 
-/// List organizations with pagination
+/// List parties with pagination
 #[utoipa::path(
     get,
     path = "/list",
     params(PageParams),
     responses(
-        (status = 200, description = "Successfully retrieved organizations", body = inline(SuccessResponse<Vec<Organization>>)),
+        (status = 200, description = "Successfully retrieved parties", body = inline(SuccessResponse<Vec<Party>>)),
         (status = 400, description = "Invalid pagination parameters"),
         (status = 500, description = "Internal server error")
     ),
-    tag = "Organizations"
+    tag = "Parties"
 )]
-pub async fn list_organizations(
+pub async fn list_parties(
     Query(params): Query<PageParams>,
     State(app_state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, AppError> {
     let params = params.validate(100);
 
-    let (organizations, pagination) =
-        ListOrganizationsUseCase::new(OrganizationRepositoryImpl::new())
+    let (parties, pagination) =
+        ListPartiesUseCase::new(PartyRepositoryImpl::new())
             .execute(&app_state.pool, params.page, params.page_size)
             .await?;
 
-    Ok(Json(success_with_pagination(organizations, pagination)))
+    Ok(Json(success_with_pagination(parties, pagination)))
 }
 
-/// Create a new organization
+/// Create a new party
 #[utoipa::path(
     post,
     path = "/create",
     request_body(
-        content = CreateOrganizationRequest,
-        description = "Organization data to create",
+        content = CreatePartyRequest,
+        description = "Party data to create",
         content_type = "application/json"
     ),
     responses(
         (
             status = 201,
-            description = "Organization created successfully",
-            body = inline(SuccessResponse<CreateOrganizationResponse>)
+            description = "Party created successfully",
+            body = inline(SuccessResponse<CreatePartyResponse>)
         ),
         (
             status = 400,
@@ -67,49 +67,45 @@ pub async fn list_organizations(
             body = inline(shared::ErrorResponse)
         )
     ),
-    tag = "Organizations"
+    tag = "Parties"
 )]
-pub async fn create_organization(
+pub async fn create_party(
     State(app_state): State<Arc<AppState>>,
-    Json(request): Json<CreateOrganizationRequest>,
+    Json(request): Json<CreatePartyRequest>,
 ) -> Result<impl IntoResponse, AppError> {
-    let input = application::organization::CreateOrganizationInput {
-        code: request.code,
-        name: request.name,
+    let input = application::party::CreatePartyInput {
+        party_type: request.party_type,
         display_name: request.display_name,
-        tax_number: request.tax_number,
-        registration_no: request.registration_no,
-        phone: request.phone,
-        email: request.email,
-        website: request.website,
-        parent_id: request.parent_id,
+        legal_name: request.legal_name,
+        tin: request.tin,
+        registration_number: request.registration_number,
     };
 
-    let organization = CreateOrganizationUseCase::new(OrganizationRepositoryImpl::new())
+    let party = CreatePartyUseCase::new(PartyRepositoryImpl::new())
         .execute(&app_state.pool, input)
         .await?;
 
-    Ok(created(CreateOrganizationResponse {
-        id: organization.id(),
+    Ok(created(CreatePartyResponse {
+        id: party.id(),
     }))
 }
 
-/// Get a single organization by ID
+/// Get a single party by ID
 #[utoipa::path(
     get,
     path = "/get/{id}",
     params(
-        ("id" = Uuid, Path, description = "Organization unique identifier")
+        ("id" = Uuid, Path, description = "Party unique identifier")
     ),
     responses(
         (
             status = 200,
-            description = "Successfully retrieved organization",
-            body = inline(SuccessResponse<Organization>)
+            description = "Successfully retrieved party",
+            body = inline(SuccessResponse<Party>)
         ),
         (
             status = 404,
-            description = "Organization not found",
+            description = "Party not found",
             body = inline(shared::ErrorResponse)
         ),
         (
@@ -123,15 +119,15 @@ pub async fn create_organization(
             body = inline(shared::ErrorResponse)
         )
     ),
-    tag = "Organizations"
+    tag = "Parties"
 )]
-pub async fn get_organization(
+pub async fn get_party(
     State(app_state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
-    let organization = GetOrganizationUseCase::new(OrganizationRepositoryImpl::new())
+    let party = GetPartyUseCase::new(PartyRepositoryImpl::new())
         .execute(&app_state.pool, id)
         .await?;
 
-    Ok(Json(success(organization)))
+    Ok(Json(success(party)))
 }
