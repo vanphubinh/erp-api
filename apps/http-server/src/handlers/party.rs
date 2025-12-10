@@ -1,8 +1,6 @@
 use crate::app_state::AppState;
 use crate::dto::{CreatePartyRequest, CreatePartyResponse};
-use application::party::{
-    CreatePartyUseCase, GetPartyUseCase, ListPartiesUseCase,
-};
+use application::party::{CreatePartyUseCase, GetPartyUseCase, ListPartiesUseCase};
 use axum::{Json, extract::Path, extract::Query, extract::State, response::IntoResponse};
 use domain::party::Party;
 use infrastructure::repositories::PartyRepositoryImpl;
@@ -28,10 +26,9 @@ pub async fn list_parties(
 ) -> Result<impl IntoResponse, AppError> {
     let params = params.validate(100);
 
-    let (parties, pagination) =
-        ListPartiesUseCase::new(PartyRepositoryImpl::new())
-            .execute(&app_state.pool, params.page, params.page_size)
-            .await?;
+    let (parties, pagination) = ListPartiesUseCase::new(PartyRepositoryImpl::new())
+        .execute(&app_state.pool, params.page, params.page_size)
+        .await?;
 
     Ok(Json(success_with_pagination(parties, pagination)))
 }
@@ -74,7 +71,7 @@ pub async fn create_party(
     Json(request): Json<CreatePartyRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let input = application::party::CreatePartyInput {
-        party_type: request.party_type,
+        party_type: request.party_type.as_str().to_string(),
         display_name: request.display_name,
         legal_name: request.legal_name,
         tin: request.tin,
@@ -85,9 +82,7 @@ pub async fn create_party(
         .execute(&app_state.pool, input)
         .await?;
 
-    Ok(created(CreatePartyResponse {
-        id: party.id(),
-    }))
+    Ok(created(CreatePartyResponse { id: party.id() }))
 }
 
 /// Get a single party by ID

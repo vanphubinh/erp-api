@@ -98,9 +98,7 @@ impl Tin {
     pub fn new(tin: impl Into<String>) -> Result<Self, DomainError> {
         let tin = tin.into().trim().to_string();
         if tin.is_empty() {
-            return Err(DomainError::InvalidValue(
-                "TIN cannot be empty".to_string(),
-            ));
+            return Err(DomainError::InvalidValue("TIN cannot be empty".to_string()));
         }
         if tin.len() > 50 {
             return Err(DomainError::InvalidValue(

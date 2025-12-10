@@ -169,7 +169,8 @@ async fn create_party_fails_with_invalid_party_type() {
 
     let (status, _) = post_json(&app, "/api/parties/create", &payload).await;
 
-    assert_eq!(status, StatusCode::BAD_REQUEST);
+    // Invalid enum value causes JSON deserialization to fail (422 Unprocessable Entity)
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
 }
 
 // =============================================================================
@@ -183,8 +184,7 @@ async fn get_party_success() {
 
     // Create first
     let name = unique_name("GetTest");
-    let (_, create_body) =
-        post_json(&app, "/api/parties/create", &minimal_party()(&name)).await;
+    let (_, create_body) = post_json(&app, "/api/parties/create", &minimal_party()(&name)).await;
     let id = create_body["data"]["id"].as_str().unwrap();
 
     // Get
@@ -199,11 +199,7 @@ async fn get_party_not_found() {
     let pool = get_test_pool().await;
     let app = app(pool);
 
-    let (status, _) = get_json(
-        &app,
-        &format!("/api/parties/get/{}", uuid::Uuid::now_v7()),
-    )
-    .await;
+    let (status, _) = get_json(&app, &format!("/api/parties/get/{}", uuid::Uuid::now_v7())).await;
 
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
